@@ -1,0 +1,30 @@
+/*
+CSS RESET RULE
+*/
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Ysabeau Office', sans-serif;
+}
+
+.carousel-highlight {
+  min-height: 100%;
+}
+
+.carousel-item {
+  background-color: gray;
+}
+
+/* .carousel-image {
+  width: 50%;
+  height: auto;
+} */
+
+/* .carousel-caption {
+  width: 50%;
+  margin-left: auto;
+  margin-right: 0;
+  color: black;
+} */

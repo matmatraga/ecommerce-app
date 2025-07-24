@@ -1,0 +1,635 @@
+{
+	"info": {
+		"_postman_id": "d6395d04-76f2-405e-b609-09805e67c79b",
+		"name": "E-CommerceAPI",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27193800"
+	},
+	"item": [
+		{
+			"name": "POST User Registration",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\" : \"admin2@mail.com\",\r\n    \"password\" : \"12345\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/users/register",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET login user",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\" : \"ac@mail.com\",\r\n    \"password\" : \"12345\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/users/login",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET user details",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{non-admin token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/users/",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST set user as admin",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/users/647ffe34c6390029f4a96d7f/admin",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"647ffe34c6390029f4a96d7f",
+						"admin"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST create product",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\" : \"Sprite\",\r\n    \"description\" : \"A lemon-lime flavoured soft drink with a crisp, clean taste that gives you the ultimate cut-through refreshment.\",\r\n    \"price\" : 30,\r\n    \"isActive\" : \"true\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/users/products",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"products"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET all products",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/users/products/allproducts",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"products",
+						"allproducts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET all active products",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{non-admin token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isActive\" : \"true\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/users/products/active",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"products",
+						"active"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET single products",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{non-admin token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/users/products/648037c17dc27b604c3239db",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"products",
+						"648037c17dc27b604c3239db"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PATCH update product information",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"name\" : \"Caffeine Free Diet Coke\",\r\n    \"description\" : \"Caffeine-free Diet Coke is the original great taste of Diet Coke, with no caffeine. A great choice for an afternoon or evening beverage.\",\r\n    \"price\" : 80\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/users/products/647ffefdc6390029f4a96d82/updateproduct",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"products",
+						"647ffefdc6390029f4a96d82",
+						"updateproduct"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PATCH archive product",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isActive\" : true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/users/products/647ffefdc6390029f4a96d82/archivedproduct",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"products",
+						"647ffefdc6390029f4a96d82",
+						"archivedproduct"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST added product to cart",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{non-admin token 2}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"products\" : [\r\n        {\r\n            \"productId\" : \"647ffefdc6390029f4a96d82\"\r\n        },\r\n        {\r\n            \"productId\" : \"647fff8bc6390029f4a96d86\"\r\n        }\r\n    ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/users/cart",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"cart"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PUT change product quantites",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{non-admin token 2}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"products\" : [\r\n        {\r\n            \"productId\" : \"647ffefdc6390029f4a96d82\",\r\n            \"quantity\" : 5\r\n        },\r\n        {\r\n            \"productId\" : \"648037c17dc27b604c3239db\",\r\n            \"quantity\" : 2\r\n        }\r\n    ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/users/cart/quantity",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"cart",
+						"quantity"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE remove products",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{non-admin token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"userId\" : \"647c9ba2c7674f061a0f34e0\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:5000/users/cart/64803a2fa8864c3dbb841e9c/removecart",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"cart",
+						"64803a2fa8864c3dbb841e9c",
+						"removecart"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET subtotal for each item",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{non-admin token 2}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/users/cart/subtotal",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"cart",
+						"subtotal"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET total price for all items",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{non-admin token 2}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/users/cart/total",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"cart",
+						"total"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST create order",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{non-admin token 2}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/users/orders",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"orders"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET authenticated user's orders",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{non-admin token 2}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/users/orders/authenticatedorder",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"orders",
+						"authenticatedorder"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET all orders",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:5000/users/orders/allorders",
+					"host": [
+						"localhost"
+					],
+					"port": "5000",
+					"path": [
+						"users",
+						"orders",
+						"allorders"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "non-admin token",
+			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0N2ZmZTI3YzYzOTAwMjlmNGE5NmQ3OSIsImlzQWRtaW4iOmZhbHNlLCJlbWFpbCI6Im1hdHJhZ2FAbWFpbC5jb20iLCJpYXQiOjE2ODYxMDk3NTN9.10cgt2lFw8hJTiECZgUkuFrwmhDB6UoDW7YLizC6_Ro"
+		},
+		{
+			"key": "admin token",
+			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0N2ZmZTJiYzYzOTAwMjlmNGE5NmQ3YyIsImlzQWRtaW4iOnRydWUsImVtYWlsIjoiYWRtaW5AbWFpbC5jb20iLCJpYXQiOjE2ODYxMTAwNDB9.QojwGLvZfvn10pNt2vLztUh5lZkTJdL6FD9aYJmZxMA"
+		},
+		{
+			"key": "non-admin token 2",
+			"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY0N2ZmZTM0YzYzOTAwMjlmNGE5NmQ3ZiIsImlzQWRtaW4iOmZhbHNlLCJlbWFpbCI6ImFjQG1haWwuY29tIiwiaWF0IjoxNjg2MTE5Mzk1fQ.TE-XWP0drezOU59mby-E0Tn0hfn5IZOeM6ojhtDKWY0"
+		}
+	]
+}
