@@ -1,20 +1,27 @@
 const express = require("express");
-const cartControllers = require("../controllers/cartControllers.js");
-const auth = require("../middleware/auth.js"); // Assuming you have an auth middleware for authentication
+const {
+  addToCart,
+  getUserCart,
+  updateQuantities,
+  clearCart
+} = require("../controllers/cartControllers.js");
 
+const {verify} = require("../middleware/auth.js"); // Assuming you're using the improved centralized auth.js
 
 const router = express.Router();
 
-router.post("/", cartControllers.addedProducts);
+// ========== Authenticated User Cart Routes ==========
 
-router.get("/", cartControllers.getUserCart);
+// Add product to cart
+router.post("/", verify, addToCart);
 
-router.put("/quantity", cartControllers.changeProductQuantities);
+// Get cart with product details and subtotals
+router.get("/", verify, getUserCart);
 
-router.delete("/removecart", cartControllers.removeCart);
+// Update product quantities in cart
+router.put("/quantity", verify, updateQuantities);
 
-router.get("/subtotal", cartControllers.subTotals);
-
-router.get("/total", cartControllers.totalPrice);
+// Optional: clear all items from cart but keep the document
+router.patch("/clear", verify, clearCart);
 
 module.exports = router;

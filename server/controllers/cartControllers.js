@@ -1,201 +1,181 @@
 const Cart = require("../models/Cart");
-const auth = require("../middleware/auth");
+const Product = require("../models/Product");
+const { calculateSubtotals } = require("../utils/cartUtils");
 
-// added products
-module.exports.addedProducts = async (request, response) => {
-	const user = auth.decode(request.headers.authorization);
-	if (user.isAdmin) return response.send({ error: 'For non-admin users only!' });
+// ========== Add to Cart ==========
+module.exports.addToCart = async (req, res) => {
+  try {
+    if (req.user.isAdmin) {
+      return res.status(403).json({ error: "Admins cannot manage carts." });
+    }
 
-	const cart = await Cart.findOne({ userId: user.id });
-	if (!cart) {
-		const newCart = new Cart({
-			userId: user.id,
-			products: request.body
-		});
-		const saveCart = await newCart.save();
-		return response.send(saveCart);
-	}
-	let cartProducts = [];
+    const { productId, quantity } = req.body;
 
-	if (cart?.products) {
-		cartProducts = cart.products;
-	}
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({ error: "Product not found." });
+    }
 
-	const productIndex = cartProducts.findIndex(
-		(product) => product.productId === request.body.productId
-	);
+    let cart = await Cart.findOne({ userId: req.user.id });
 
-	if (productIndex !== -1) {
-		const currentProduct = cartProducts[productIndex];
-		const updatedProductQuantity = {
-			productId: currentProduct.productId,
-			quantity: currentProduct.quantity + request.body.quantity
-		};
+    if (!cart) {
+      cart = new Cart({
+        userId: req.user.id,
+        products: [{ productId, quantity }]
+      });
+    } else {
+      const index = cart.products.findIndex(
+        (p) => p.productId.toString() === productId
+      );
 
-		cartProducts[productIndex] = updatedProductQuantity;
-	} else {
-		cartProducts.push(request.body);
-	}
+      if (index !== -1) {
+        cart.products[index].quantity += quantity;
+      } else {
+        cart.products.push({ productId, quantity });
+      }
+    }
 
-	const updateCart = await Cart.findOneAndUpdate({ userId: user.id }, { products: cartProducts });
-	return response.send(updateCart);
+    await cart.save();
+
+    // Populate and compute subtotal
+    const populatedCart = await Cart.findById(cart._id).populate({
+      path: "products.productId",
+      model: "Product"
+    });
+
+    const productsWithSubtotals = calculateSubtotals(populatedCart);
+
+    res.status(200).json({
+      message: "Cart updated successfully.",
+      cart: {
+        _id: cart._id,
+        userId: cart.userId,
+        products: productsWithSubtotals
+      }
+    });
+  } catch (err) {
+	console.error("Cart Update Error:", err);
+    res.status(500).json({ error: "Failed to update cart." });
+  }
 };
 
-// Get user cart
+// ========== Get User Cart ==========
+module.exports.getUserCart = async (req, res) => {
+  try {
+    if (req.user.isAdmin) {
+      return res.status(403).json({ error: "Admins do not have carts." });
+    }
 
-module.exports.getUserCart = (request, response) => {
+    const cart = await Cart.findOne({ userId: req.user.id }).populate({
+      path: "products.productId",
+      model: "Product"
+    });
 
-
-	let userData;
-
-	try {
-		userData = auth.decode(request.headers.authorization);
-	} catch (error) {
-		return response.send(error.message);
+    if (!cart) {
+      return res.status(404).json({ error: "Cart not found." });
 	}
+	  
+	const productsWithSubtotals = calculateSubtotals(cart);
 
-
-	if (!userData?.isAdmin) {
-		Cart.findOne({ userId: userData.id })
-			.populate({
-				path: 'products',
-				populate: {
-					path: 'productId',
-					model: 'Product'
-				}
-			})
-			.then((cart) => {
-				response.send(cart);
-
-			}).catch((error) => response.send(error))
-	} else {
-		return response.send("For non-admin users only!")
-	}
+	  res.status(200).json({
+		message: "Cart retrieved successfully.",
+		cart: {
+			_id: cart._id,
+			userId: cart.userId,
+			products: productsWithSubtotals
+		}
+	});
+  } catch (err) {
+    res.status(500).json({ error: "Failed to retrieve cart." });
+  }
 };
 
-// Change product quantities
-module.exports.changeProductQuantities = (request, response) => {
+// ========== Change Quantities ==========
+module.exports.updateQuantities = async (req, res) => {
+  try {
+    if (req.user.isAdmin) {
+      return res.status(403).json({ error: "Admins do not have carts." });
+    }
 
-	let userData;
+	const { products } = req.body;
+	  
+	if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ error: "Products must be a non-empty array." });
+    }
 
-	try {
-		userData = auth.decode(request.headers.authorization);
-	} catch (error) {
-		return response.send(error.message);
+    const updatedCart = await Cart.findOneAndUpdate(
+      { userId: req.user.id },
+      { products },
+      { new: true }
+    );
+
+    if (!updatedCart) {
+      return res.status(404).json({ error: "Cart not found." });
 	}
+	  
+	// Populate product data for pricing
+    const populatedCart = await Cart.findById(updatedCart._id).populate({
+      path: "products.productId",
+      model: "Product"
+	});
+	  
+	// Step 3: Update quantities
+	for (const update of products) {
+		const index = populatedCart.products.findIndex(
+			(item) => item.productId.toString() === update.productId
+		);
 
-	if (!userData.isAdmin) {
-		const updatedProductQuantities = {
-			userId: userData.id,
-			products: request.body.products
+		if (index !== -1) {
+			updatedCart.products[index].quantity = update.quantity;
+		} else {
+			const productExists = await Product.findById(update.productId);
+			if (productExists) {
+				updatedCart.products.push({
+					productId: update.productId,
+					quantity: update.quantity
+				});
+			}
 		}
 
-		Cart.findOneAndUpdate({ userId: userData.id }, updatedProductQuantities, { new: true })
-			.then(result => {
-				if (!result) {
-					return response.send("Cart not found!")
-				} else {
-					return response.send("Product quantity has been changed!")
-				}
-			}).catch(error => response.send(error))
-	} else {
-		return response.send("For non-admin users only!")
-	}
+		await populatedCart.save();
+	
+		// Compute subtotals
+		const productsWithSubtotals = calculateSubtotals(populatedCart);
+
+		res.status(200).json({
+			message: "Product quantities updated.",
+			cart: {
+				_id: updatedCart._id,
+				userId: updatedCart.userId,
+				products: productsWithSubtotals
+			}
+		});
+	  }
+  	}	catch (err) {
+	  	console.error("Update Quantities Error:", err);
+		res.status(500).json({ error: "Failed to update cart." });
+	};
 }
 
-// Remove Products from Cart
-module.exports.removeCart = (request, response) => {
+// ========== Optional: Clear Cart Products but Keep Cart ==========
+module.exports.clearCart = async (req, res) => {
+  try {
+    if (req.user.isAdmin) {
+      return res.status(403).json({ error: "Admins do not have carts." });
+    }
 
-	let userData;
+    const cleared = await Cart.findOneAndUpdate(
+      { userId: req.user.id },
+      { products: [] },
+      { new: true }
+    );
 
-	try {
-		userData = auth.decode(request.headers.authorization);
-	} catch (error) {
-		return response.send(error.message);
-	}
+    if (!cleared) {
+      return res.status(404).json({ error: "Cart not found." });
+    }
 
-	if (!userData.isAdmin) {
-		Cart.findOneAndDelete({ userId: userData.id }, { new: true })
-			.then(result => {
-				if (!result) {
-					return response.send("Cart is not found!")
-				} else {
-					return response.send(result)
-				}
-			}).catch(error => response.send(error))
-	} else {
-		return response.send("For non-admin users only!")
-	}
-}
-
-// Subtotal for each item
-module.exports.subTotals = (request, response) => {
-
-
-	let userData;
-
-	try {
-		userData = auth.decode(request.headers.authorization);
-	} catch (error) {
-		return response.send(error.message);
-	}
-
-
-	if (!userData.isAdmin) {
-		Cart.findOne({ userId: userData.id })
-			.populate({
-				path: 'products',
-				populate: {
-					path: 'productId',
-					model: 'Product'
-				}
-			})
-			.then((cart) => {
-				const subTotals = cart.products.map((product) => {
-					const subtotal = product.quantity * product.productId.price;
-					return { name: product.productId.name, subtotal, quantity: product.quantity };
-				});
-
-				response.send(subTotals);
-			}).catch((error) => response.send(error));
-	} else {
-		return response.send("For non-admin users only!")
-	}
-};
-
-// Total Price for All Items
-
-module.exports.totalPrice = (request, response) => {
-
-
-	let userData;
-
-	try {
-		userData = auth.decode(request.headers.authorization);
-	} catch (error) {
-		return response.send(error.message);
-	}
-
-
-	if (!userData?.isAdmin) {
-		Cart.findOne({ userId: userData.id })
-			.populate({
-				path: 'products',
-				populate: {
-					path: 'productId',
-					model: 'Product'
-				}
-			})
-			.then((cart) => {
-				const totalPrice = cart.products.reduce((total, product) => {
-					const subtotal = product.quantity * product.productId.price;
-					return total + subtotal;
-				}, 0);
-
-				response.send({ totalPrice });
-
-			}).catch((error) => response.send(error))
-	} else {
-		return response.send("For non-admin users only!")
-	}
+    res.status(200).json({ message: "Cart cleared successfully.", cart: cleared });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to clear cart." });
+  }
 };
