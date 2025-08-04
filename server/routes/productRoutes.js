@@ -1,17 +1,19 @@
 const express = require("express");
 const {
-    validateCreateProduct,
-    validateUpdateProduct,
-    createProduct,
-    getAllProducts,
-    getAllActiveProducts,
-    getSingleProduct,
-    updateProductInformation,
-    archiveProduct,
-    unarchiveProduct
+  validateCreateProduct,
+  validateUpdateProduct,
+  createProduct,
+  getAllProducts,
+  getAllActiveProducts,
+  getSingleProduct,
+  updateProductInformation,
+  archiveProduct,
+  unarchiveProduct,
+  searchProductsByName,
+  searchProductsByPrice,
 } = require("../controllers/productController");
 
-const {verify, requireAdmin} = require("../middleware/auth"); // assuming auth is centralized
+const { verify, requireAdmin } = require("../middleware/auth"); // assuming auth is centralized
 
 const router = express.Router();
 
@@ -24,7 +26,13 @@ router.post("/", verify, requireAdmin, validateCreateProduct, createProduct);
 router.get("/all", verify, requireAdmin, getAllProducts);
 
 // Update a product
-router.patch("/:productId", verify, requireAdmin, validateUpdateProduct, updateProductInformation);
+router.patch(
+  "/:productId",
+  verify,
+  requireAdmin,
+  validateUpdateProduct,
+  updateProductInformation
+);
 
 // Archive a product
 router.patch("/:productId/archive", verify, requireAdmin, archiveProduct);
@@ -39,5 +47,11 @@ router.get("/", getAllActiveProducts);
 
 // Get a specific product by ID
 router.get("/:productId", getSingleProduct);
+
+// Get a specific product by name
+router.get("/search/name", searchProductsByName);
+
+// Get a specific product by price range
+router.get("/search/price", searchProductsByPrice);
 
 module.exports = router;
