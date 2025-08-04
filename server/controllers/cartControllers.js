@@ -97,65 +97,52 @@ module.exports.updateQuantities = async (req, res) => {
       return res.status(403).json({ error: "Admins do not have carts." });
     }
 
-	const { products } = req.body;
-	  
-	if (!Array.isArray(products) || products.length === 0) {
+    const { products } = req.body;
+    if (!Array.isArray(products) || products.length === 0) {
       return res.status(400).json({ error: "Products must be a non-empty array." });
     }
 
-    const updatedCart = await Cart.findOneAndUpdate(
-      { userId: req.user.id },
-      { products },
-      { new: true }
-    );
-
-    if (!updatedCart) {
+    const cart = await Cart.findOne({ userId: req.user.id });
+    if (!cart) {
       return res.status(404).json({ error: "Cart not found." });
-	}
-	  
-	// Populate product data for pricing
-    const populatedCart = await Cart.findById(updatedCart._id).populate({
+    }
+
+    // Update quantities of matching products only
+    for (const update of products) {
+      const index = cart.products.findIndex(
+        (item) => item.productId.toString() === update.productId
+      );
+
+      if (index !== -1) {
+        cart.products[index].quantity = update.quantity;
+      } else {
+        return res.status(400).json({ error: `Product ${update.productId} not found in cart.` });
+      }
+    }
+
+    await cart.save();
+
+    // Populate and compute subtotals
+    const populatedCart = await Cart.findById(cart._id).populate({
       path: "products.productId",
       model: "Product"
-	});
-	  
-	// Step 3: Update quantities
-	for (const update of products) {
-		const index = populatedCart.products.findIndex(
-			(item) => item.productId.toString() === update.productId
-		);
+    });
 
-		if (index !== -1) {
-			updatedCart.products[index].quantity = update.quantity;
-		} else {
-			const productExists = await Product.findById(update.productId);
-			if (productExists) {
-				updatedCart.products.push({
-					productId: update.productId,
-					quantity: update.quantity
-				});
-			}
-		}
+    const productsWithSubtotals = calculateSubtotals(populatedCart);
 
-		await populatedCart.save();
-	
-		// Compute subtotals
-		const productsWithSubtotals = calculateSubtotals(populatedCart);
-
-		res.status(200).json({
-			message: "Product quantities updated.",
-			cart: {
-				_id: updatedCart._id,
-				userId: updatedCart.userId,
-				products: productsWithSubtotals
-			}
-		});
-	  }
-  	}	catch (err) {
-	  	console.error("Update Quantities Error:", err);
-		res.status(500).json({ error: "Failed to update cart." });
-	};
-}
+    res.status(200).json({
+      message: "Product quantities updated.",
+      cart: {
+        _id: cart._id,
+        userId: cart.userId,
+        products: productsWithSubtotals
+      }
+    });
+  } catch (err) {
+    console.error("Update Quantities Error:", err);
+    res.status(500).json({ error: "Failed to update cart." });
+  }
+};
 
 // ========== Optional: Clear Cart Products but Keep Cart ==========
 module.exports.clearCart = async (req, res) => {
