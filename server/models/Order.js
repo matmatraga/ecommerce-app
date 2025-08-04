@@ -5,43 +5,50 @@ const orderSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: [true, "User ID is required!"]
+      required: [true, "User ID is required!"],
     },
     products: [
       {
         productId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Product",
-          required: [true, "Product ID is required!"]
+          required: [true, "Product ID is required!"],
         },
         quantity: {
           type: Number,
           required: true,
-          min: [1, "Quantity must be at least 1"]
+          min: [1, "Quantity must be at least 1"],
         },
         priceAtPurchase: {
           type: Number,
-          required: true
+          required: true,
         },
         subtotal: {
           type: Number,
-          required: true
-        }
-      }
+          required: true,
+        },
+      },
     ],
     totalAmount: {
       type: Number,
-      required: [true, "Total amount is required!"]
+      required: [true, "Total amount is required!"],
     },
     status: {
       type: String,
-      enum: ["pending", "paid", "shipped", "delivered", "cancelled", "refunded"],
-      default: "pending"
+      enum: [
+        "pending",
+        "paid",
+        "shipped",
+        "delivered",
+        "cancelled",
+        "refunded",
+      ],
+      default: "pending",
     },
     paymentMethod: {
       type: String,
       enum: ["cod", "card", "paypal", "gcash", "grabpay"],
-      default: "cod"
+      default: "cod",
     },
     shippingAddress: {
       fullName: String,
@@ -49,12 +56,12 @@ const orderSchema = new mongoose.Schema(
       addressLine2: String,
       city: String,
       postalCode: String,
-      country: String
+      country: String,
     },
     purchasedOn: {
       type: Date,
-      default: Date.now
-    }
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );

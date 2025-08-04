@@ -14,7 +14,7 @@ module.exports.createOrder = async (req, res) => {
 
     const cart = await Cart.findOne({ userId: userData.id }).populate({
       path: "products.productId",
-      model: "Product"
+      model: "Product",
     });
 
     if (!cart) {
@@ -30,7 +30,7 @@ module.exports.createOrder = async (req, res) => {
         productId: item.productId._id,
         quantity: item.quantity,
         priceAtPurchase: price,
-        subtotal
+        subtotal,
       };
     });
 
@@ -48,7 +48,7 @@ module.exports.createOrder = async (req, res) => {
       products,
       totalAmount: total,
       shippingAddress,
-      paymentMethod
+      paymentMethod,
     });
 
     await newOrder.save();
@@ -58,13 +58,13 @@ module.exports.createOrder = async (req, res) => {
 
     res.status(201).json({
       message: "Order placed successfully.",
-      order: newOrder
+      order: newOrder,
     });
   } catch (error) {
     console.error("Create Order Error:", error);
     res.status(500).json({
       error: "Internal Server Error",
-      details: error.message
+      details: error.message,
     });
   }
 };
@@ -75,14 +75,18 @@ module.exports.getAuthenticatedUserOrders = async (req, res) => {
     const userData = auth.decode(req.headers.authorization);
 
     if (userData.isAdmin) {
-      return res.status(403).json({ error: "Admins cannot retrieve user orders." });
+      return res
+        .status(403)
+        .json({ error: "Admins cannot retrieve user orders." });
     }
 
-    const orders = await Order.find({ userId: userData.id }).sort({ createdAt: -1 });
+    const orders = await Order.find({ userId: userData.id }).sort({
+      createdAt: -1,
+    });
 
     res.status(200).json({
       message: "User orders retrieved successfully.",
-      orders
+      orders,
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch user orders." });
@@ -108,7 +112,7 @@ module.exports.getAllOrders = async (req, res) => {
 
     res.status(200).json({
       message: "All orders retrieved successfully.",
-      orders
+      orders,
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to retrieve all orders." });
@@ -139,7 +143,7 @@ module.exports.updateOrderStatus = async (req, res) => {
 
     res.status(200).json({
       message: `Order status updated to '${status}'.`,
-      order: updatedOrder
+      order: updatedOrder,
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to update order status." });
@@ -164,7 +168,9 @@ module.exports.cancelOrder = async (req, res) => {
     }
 
     if (order.status !== "pending") {
-      return res.status(400).json({ error: "Only pending orders can be cancelled." });
+      return res
+        .status(400)
+        .json({ error: "Only pending orders can be cancelled." });
     }
 
     order.status = "cancelled";
@@ -172,7 +178,7 @@ module.exports.cancelOrder = async (req, res) => {
 
     res.status(200).json({
       message: "Order cancelled successfully.",
-      order
+      order,
     });
   } catch (error) {
     res.status(500).json({ error: "Failed to cancel order." });
