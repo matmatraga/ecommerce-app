@@ -1,7 +1,7 @@
-const Order = require("../models/Order.js");
-const Cart = require("../models/Cart.js");
+const Order = require("../models/Order");
+const Cart = require("../models/Cart");
 
-const auth = require("../auth.js");
+const auth = require("../middleware/auth");
 
 // Create Order
 module.exports.createOrder = async (request, response) => {

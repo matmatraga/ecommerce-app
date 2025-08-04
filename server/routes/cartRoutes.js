@@ -1,5 +1,6 @@
-const express = require("express")
-const cartControllers = require("../controllers/cartControllers.js")
+const express = require("express");
+const cartControllers = require("../controllers/cartControllers.js");
+const auth = require("../middleware/auth.js"); // Assuming you have an auth middleware for authentication
 
 
 const router = express.Router();

@@ -1,0 +1,146 @@
+const Users = require("../models/Users.js");
+const bcrypt = require("bcrypt");
+const auth = require("../middleware/auth.js");
+const { body, validationResult } = require("express-validator");
+
+// ========================
+// Validation Rules
+// ========================
+
+// Registration validation
+module.exports.validateRegister = [
+  body("email").isEmail().withMessage("Invalid email").normalizeEmail(),
+  body("password")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters"),
+  body("isAdmin")
+    .optional()
+    .isBoolean()
+    .withMessage("isAdmin must be true or false")
+];
+
+// Login validation
+module.exports.validateLogin = [
+  body("email").isEmail().withMessage("Invalid email").normalizeEmail(),
+  body("password").notEmpty().withMessage("Password is required")
+];
+
+// ========================
+// Controller Logic
+// ========================
+
+// REGISTER
+module.exports.registerUser = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({
+      errors: errors.array().map(err => ({
+        field: err.param,
+        message: err.msg
+      }))
+    });
+  }
+
+  try {
+    const { email, password, isAdmin } = req.body;
+
+    const existingUser = await Users.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ error: "Email already in use." });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new Users({
+      email,
+      password: hashedPassword,
+      isAdmin: !!isAdmin
+    });
+
+    await newUser.save();
+    res.status(201).json({ message: "User registered successfully." });
+  } catch (err) {
+    res.status(500).json({ error: "Registration failed." });
+  }
+};
+
+// LOGIN
+module.exports.loginUser = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({
+      errors: errors.array().map(err => ({
+        field: err.param,
+        message: err.msg
+      }))
+    });
+  }
+
+  try {
+    const { email, password } = req.body;
+
+    const user = await Users.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ error: "Invalid email or password." });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid email or password." });
+    }
+
+    const token = auth.createAccessToken(user);
+    res.status(200).json({ auth: token });
+  } catch (err) {
+    res.status(500).json({ error: "Login failed." });
+  }
+};
+
+// GET PROFILE (authenticated user)
+module.exports.getProfile = async (req, res) => {
+  try {
+    const user = await Users.findById(req.user.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to retrieve profile." });
+  }
+};
+
+// PROMOTE USER TO ADMIN
+module.exports.setUserAsAdmin = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const updatedUser = await Users.findByIdAndUpdate(
+      userId,
+      { isAdmin: true },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    res.status(200).json({ message: "User promoted to admin." });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to promote user." });
+  }
+};
+
+// GET USER DETAILS BY ID IN TOKEN
+module.exports.retrieveUserDetails = async (req, res) => {
+  try {
+    const user = await Users.findById(req.user.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to retrieve user details." });
+  }
+};

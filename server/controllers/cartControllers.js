@@ -1,5 +1,5 @@
-const Cart = require("../models/Cart.js");
-const auth = require("../auth.js");
+const Cart = require("../models/Cart");
+const auth = require("../middleware/auth");
 
 // added products
 module.exports.addedProducts = async (request, response) => {

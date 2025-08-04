@@ -1,28 +1,43 @@
-const express = require("express")
-const productControllers = require("../controllers/productControllers")
+const express = require("express");
+const {
+    validateCreateProduct,
+    validateUpdateProduct,
+    createProduct,
+    getAllProducts,
+    getAllActiveProducts,
+    getSingleProduct,
+    updateProductInformation,
+    archiveProduct,
+    unarchiveProduct
+} = require("../controllers/productController");
 
-const auth = require("../auth.js");
+const {verify, requireAdmin} = require("../middleware/auth"); // assuming auth is centralized
 
 const router = express.Router();
 
-// Create product routes
+// ========== Protected Admin Routes ==========
 
-router.post("/", auth.verify, productControllers.createProduct);
+// Create new product
+router.post("/", verify, requireAdmin, validateCreateProduct, createProduct);
 
-// Retrieve all products routes
-router.get("/allproducts", productControllers.getAllProducts);
+// Get all products (admin only)
+router.get("/all", verify, requireAdmin, getAllProducts);
 
-// Retrieve all active products routes
-router.get("/active", productControllers.getAllActiveProducts);
-
-// Retrieve a single product route
-router.get("/:productId", productControllers.getSingleProducts);
-
-// Update product information
-router.patch("/:productId/updateproduct", auth.verify, productControllers.updateProductInformation);
+// Update a product
+router.patch("/:productId", verify, requireAdmin, validateUpdateProduct, updateProductInformation);
 
 // Archive a product
-router.patch("/:productId/archivedproduct", auth.verify, productControllers.archiveProduct);
+router.patch("/:productId/archive", verify, requireAdmin, archiveProduct);
 
+// Unarchive a product
+router.patch("/:productId/unarchive", verify, requireAdmin, unarchiveProduct);
+
+// ========== Public Routes ==========
+
+// Get all active products (for all users)
+router.get("/", getAllActiveProducts);
+
+// Get a specific product by ID
+router.get("/:productId", getSingleProduct);
 
 module.exports = router;
