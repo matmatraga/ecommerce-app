@@ -20,6 +20,11 @@ const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
 const app = express();
 
+// Render (and most PaaS) put the app behind a reverse proxy that sets
+// X-Forwarded-For. Trust the first proxy hop so express-rate-limit and req.ip
+// resolve the real client IP instead of erroring.
+app.set("trust proxy", 1);
+
 connectDB();
 
 app.use(helmet());
