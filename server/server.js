@@ -8,6 +8,7 @@ const usersRoutes = require("./routes/userRoutes.js");
 const productRoutes = require("./routes/productRoutes.js");
 const orderRoutes = require("./routes/orderRoutes.js");
 const cartRoutes = require("./routes/cartRoutes.js");
+const uploadRoutes = require("./routes/uploadRoutes.js");
 
 const PORT = process.env.PORT || 4000;
 
@@ -23,6 +24,7 @@ app.use("/users", usersRoutes);
 app.use("/products", productRoutes);
 app.use("/orders", orderRoutes);
 app.use("/carts", cartRoutes);
+app.use("/upload", uploadRoutes);
 
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 

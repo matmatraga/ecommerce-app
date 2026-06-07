@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import UserContext from '../context/UserContext';
 import AppNavBar from '../components/AppNavBar';
 import { getProduct, updateProduct } from '../api/products';
+import ImageUploadField from '../components/ImageUploadField';
 import { CATEGORIES } from '../data';
 
 export default function UpdateProduct() {
@@ -126,11 +127,9 @@ export default function UpdateProduct() {
               </div>
             </div>
             <Form.Group className="mb-3">
-              <Form.Label>Image URL</Form.Label>
-              <Form.Control
-                type="url"
+              <ImageUploadField
                 value={form.img}
-                onChange={(e) => handleChange('img', e.target.value)}
+                onChange={(url) => handleChange('img', url)}
                 required
               />
             </Form.Group>
