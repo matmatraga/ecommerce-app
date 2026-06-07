@@ -703,6 +703,24 @@ body {
   color: var(--aster-primary-text);
 }
 
+.newsletter-section__note {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+}
+
+.newsletter-section__success {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.newsletter-section__error {
+  font-size: 0.85rem;
+  color: #fca5a5;
+  font-weight: 500;
+}
+
 /* ── Footer ── */
 .aster-footer {
   background: var(--aster-footer-bg);
