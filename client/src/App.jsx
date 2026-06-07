@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { UserProvider } from './context/UserContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { getUserDetails } from './api/auth';
+import { getUserDetails, logout } from './api/auth';
 import Home from './pages/Home';
 import Products from './pages/Products';
 import Cart from './pages/Cart';
@@ -23,15 +23,10 @@ function App() {
   const [user, setUser] = useState({ id: null, isAdmin: null });
 
   const loadUser = async () => {
-    if (!localStorage.getItem('token')) {
-      setUser({ id: null, isAdmin: null });
-      return;
-    }
     try {
       const data = await getUserDetails();
       setUser({ id: data._id, isAdmin: data.isAdmin });
     } catch {
-      localStorage.removeItem('token');
       setUser({ id: null, isAdmin: null });
     }
   };
@@ -40,8 +35,12 @@ function App() {
     loadUser();
   }, []);
 
-  const unsetUser = () => {
-    localStorage.removeItem('token');
+  const unsetUser = async () => {
+    try {
+      await logout();
+    } catch {
+      // Ignore network/logout errors; clear local state regardless.
+    }
     setUser({ id: null, isAdmin: null });
   };
 

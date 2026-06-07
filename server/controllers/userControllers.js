@@ -99,10 +99,20 @@ module.exports.loginUser = async (req, res) => {
     }
 
     const token = auth.createAccessToken(user);
-    res.status(200).json({ auth: token });
+    auth.setAuthCookie(res, token);
+    res.status(200).json({
+      message: "Login successful.",
+      user: { id: user._id, email: user.email, isAdmin: user.isAdmin },
+    });
   } catch (err) {
     res.status(500).json({ error: "Login failed." });
   }
+};
+
+// LOGOUT
+module.exports.logoutUser = (req, res) => {
+  auth.clearAuthCookie(res);
+  res.status(200).json({ message: "Logged out successfully." });
 };
 
 // GET PROFILE (authenticated user)

@@ -1,6 +1,5 @@
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
-const auth = require("../middleware/auth");
 const { calculateOrderTotals } = require("../utils/orderUtils");
 const { validateStock, decrementStock, restoreStock } = require("../utils/stockUtils");
 
@@ -47,7 +46,7 @@ module.exports.buildOrderFromCart = buildOrderFromCart;
 // ========== CREATE ORDER ==========
 module.exports.createOrder = async (req, res) => {
   try {
-    const userData = auth.decode(req.headers.authorization);
+    const userData = req.user;
 
     if (userData.isAdmin) {
       return res.status(403).json({ message: "For non-admin users only!" });
@@ -96,7 +95,7 @@ module.exports.createOrder = async (req, res) => {
 // ========== GET AUTHENTICATED USER'S ORDERS ==========
 module.exports.getAuthenticatedUserOrders = async (req, res) => {
   try {
-    const userData = auth.decode(req.headers.authorization);
+    const userData = req.user;
 
     if (userData.isAdmin) {
       return res
@@ -130,7 +129,7 @@ const PAYMENT_METHODS = ["cod", "gcash", "grabpay"];
 
 module.exports.getAllOrders = async (req, res) => {
   try {
-    const userData = auth.decode(req.headers.authorization);
+    const userData = req.user;
 
     if (!userData.isAdmin) {
       return res.status(403).json({ error: "Admin privileges required." });
@@ -163,7 +162,7 @@ module.exports.getAllOrders = async (req, res) => {
 // ========== UPDATE ORDER STATUS (Admin Only) ==========
 module.exports.updateOrderStatus = async (req, res) => {
   try {
-    const userData = auth.decode(req.headers.authorization);
+    const userData = req.user;
 
     if (!userData.isAdmin) {
       return res.status(403).json({ error: "Admin privileges required." });
@@ -194,7 +193,7 @@ module.exports.updateOrderStatus = async (req, res) => {
 // ========== CANCEL ORDER (User Only) ==========
 module.exports.cancelOrder = async (req, res) => {
   try {
-    const userData = auth.decode(req.headers.authorization);
+    const userData = req.user;
 
     if (userData.isAdmin) {
       return res.status(403).json({ error: "Admins cannot cancel orders." });

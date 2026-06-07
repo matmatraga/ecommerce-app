@@ -1,6 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-
-export const getToken = () => localStorage.getItem('token');
+// Empty by default so requests are same-origin and the Vite dev proxy (or a
+// same-domain deployment) forwards them with the httpOnly auth cookie attached.
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 export async function apiRequest(path, options = {}) {
   const headers = {
@@ -8,13 +8,9 @@ export async function apiRequest(path, options = {}) {
     ...options.headers,
   };
 
-  const token = getToken();
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
+    credentials: 'include',
     headers,
   });
 

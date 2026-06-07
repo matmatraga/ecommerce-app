@@ -1,13 +1,12 @@
-import API_URL, { getToken } from './client';
+import API_URL from './client';
 
 export async function uploadProductImage(file) {
   const formData = new FormData();
   formData.append('image', file);
 
-  const token = getToken();
   const response = await fetch(`${API_URL}/upload`, {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: 'include',
     body: formData,
   });
 

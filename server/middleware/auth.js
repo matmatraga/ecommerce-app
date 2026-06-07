@@ -3,6 +3,20 @@ require("dotenv").config();
 
 const secret = process.env.SECRET;
 
+const TOKEN_COOKIE = "token";
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+// Cookie options for the auth token. `secure` only in production so cookies
+// still work over http://localhost during development.
+const cookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  maxAge: ONE_DAY_MS,
+});
+
+module.exports.TOKEN_COOKIE = TOKEN_COOKIE;
+
 // Create access token with expiration
 module.exports.createAccessToken = (user) => {
   const payload = {
@@ -14,15 +28,37 @@ module.exports.createAccessToken = (user) => {
   return jwt.sign(payload, secret, { expiresIn: "1d" });
 };
 
+// Sets the JWT as an httpOnly cookie on the response.
+module.exports.setAuthCookie = (res, token) => {
+  res.cookie(TOKEN_COOKIE, token, cookieOptions());
+};
+
+// Clears the auth cookie (used on logout).
+module.exports.clearAuthCookie = (res) => {
+  res.clearCookie(TOKEN_COOKIE, { ...cookieOptions(), maxAge: undefined });
+};
+
+// Reads the raw JWT from the cookie, falling back to the Authorization header.
+const getTokenFromRequest = (req) => {
+  if (req.cookies && req.cookies[TOKEN_COOKIE]) {
+    return req.cookies[TOKEN_COOKIE];
+  }
+  const header = req.headers.authorization;
+  if (header && header.startsWith("Bearer ")) {
+    return header.slice(7);
+  }
+  return null;
+};
+
+module.exports.getTokenFromRequest = getTokenFromRequest;
+
 // Middleware: Verify Token
 module.exports.verify = (req, res, next) => {
-  let token = req.headers.authorization;
+  const token = getTokenFromRequest(req);
 
-  if (!token || !token.startsWith("Bearer ")) {
+  if (!token) {
     return res.status(401).json({ error: "No or invalid token provided." });
   }
-
-  token = token.slice(7); // Remove 'Bearer '
 
   jwt.verify(token, secret, (err, decoded) => {
     if (err) {
@@ -41,10 +77,4 @@ module.exports.requireAdmin = (req, res, next) => {
     return res.status(403).json({ error: "Admin privileges required." });
   }
   next();
-};
-
-// Utility: Decode Token
-module.exports.decode = (token) => {
-  if (!token || !token.startsWith("Bearer ")) return null;
-  return jwt.decode(token.slice(7), { complete: true })?.payload;
 };

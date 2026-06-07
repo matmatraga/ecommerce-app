@@ -20,8 +20,7 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const data = await login({ email, password });
-      localStorage.setItem('token', data.auth);
+      await login({ email, password });
       const profile = await getUserDetails();
       setUser({ id: profile._id, isAdmin: profile.isAdmin });
       refreshUser?.();

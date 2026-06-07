@@ -6,6 +6,7 @@ const {
   registerUser,
   validateLogin,
   loginUser,
+  logoutUser,
   getProfile,
   retrieveUserDetails,
   setUserAsAdmin,
@@ -13,10 +14,12 @@ const {
   validateResetPassword,
 } = require("../controllers/userControllers");
 const { verify, requireAdmin } = require("../middleware/auth"); // assuming your middleware is still in auth.js
+const { authLimiter } = require("../middleware/rateLimiters");
 
 // Public Routes
-router.post("/register", validateRegister, registerUser);
-router.post("/login", validateLogin, loginUser);
+router.post("/register", authLimiter, validateRegister, registerUser);
+router.post("/login", authLimiter, validateLogin, loginUser);
+router.post("/logout", logoutUser);
 
 // Protected Routes (must be authenticated)
 router.get("/me", verify, getProfile);

@@ -40,6 +40,7 @@ PORT=4000
 MONGODB_STRING=mongodb://127.0.0.1:27017/aster-ecommerce
 SECRET=your_jwt_secret_here
 CLIENT_URL=http://localhost:5173
+NODE_ENV=development
 SEED_ADMIN_EMAIL=admin@aster.dev
 SEED_ADMIN_PASSWORD=Admin1234!
 ```
@@ -47,7 +48,10 @@ SEED_ADMIN_PASSWORD=Admin1234!
 **client/.env** (copy from `client/.env.example`):
 
 ```env
-VITE_API_URL=http://localhost:4000
+# Leave empty in development — the Vite dev server proxies API paths to the
+# backend so the httpOnly auth cookie stays same-origin. Set to the production
+# API origin only when the client is served from a different domain.
+VITE_API_URL=
 ```
 
 ### 3. Seed admin user
@@ -74,11 +78,19 @@ All orders go through `POST /orders` with a chosen payment method:
 - **COD** — order is placed as `pending`; pay on delivery
 - **GCash / GrabPay** — order is placed as `pending`; admin confirms payment manually
 
+## Security
+
+- **httpOnly cookie auth** — the JWT is set as an `httpOnly`, `SameSite=Lax` cookie on login (never stored in `localStorage`), so it is not reachable from JavaScript. It is sent automatically with same-origin requests and cleared by `POST /users/logout`. In production (`NODE_ENV=production`) the cookie is also `Secure` (HTTPS only).
+- **Helmet** sets hardened HTTP response headers.
+- **CORS** is restricted to `CLIENT_URL` with credentials enabled.
+- **Rate limiting** — a global limit plus stricter limits on auth endpoints (`/users/login`, `/users/register`) and order creation (`POST /orders`).
+- The Vite dev server proxies API paths to the backend so cookies remain same-origin during local development.
+
 ## API overview
 
 | Resource | Endpoints |
 |----------|-----------|
-| Users | `POST /users/register`, `POST /users/login`, `GET /users/details` |
+| Users | `POST /users/register`, `POST /users/login`, `POST /users/logout`, `GET /users/details` |
 | Products | `GET /products`, `GET /products/all`, `PATCH /products/:id/archive` |
 | Cart | `GET/POST /carts`, `PUT /carts/quantity`, `PATCH /carts/clear` |
 | Orders | `POST /orders`, `GET /orders/authenticatedorder`, `PATCH /orders/:id/cancel` |
