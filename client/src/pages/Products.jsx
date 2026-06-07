@@ -6,34 +6,58 @@ import ProductCard from '../components/ProductCard';
 import AppNavBar from '../components/AppNavBar';
 import Newsletter from '../components/Newsletter';
 import Footer from '../components/Footer';
+import Pagination from '../components/Pagination';
 import { getActiveProducts, searchByName, searchByPrice } from '../api/products';
 import { CATEGORIES } from '../data';
+
+const PAGE_SIZE = 8;
 
 export default function Products() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [page, setPage] = useState(1);
+
+  const isSearching = Boolean(search || minPrice || maxPrice);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['products', category, search, minPrice, maxPrice],
+    queryKey: ['products', category, search, minPrice, maxPrice, page],
     queryFn: async () => {
       if (search) {
         const res = await searchByName(search);
-        return res.products;
+        return { products: res.products, pagination: null };
       }
       if (minPrice || maxPrice) {
         const res = await searchByPrice(minPrice, maxPrice);
-        return res.products;
+        return { products: res.products, pagination: null };
       }
-      const res = await getActiveProducts(category ? { category } : {});
-      return res.products;
+      const res = await getActiveProducts({
+        ...(category ? { category } : {}),
+        page,
+        limit: PAGE_SIZE,
+      });
+      return { products: res.products, pagination: res.pagination };
     },
   });
 
+  const products = data?.products ?? [];
+  const pagination = data?.pagination;
+
   const handleSearch = (e) => {
     e.preventDefault();
+    setPage(1);
     refetch();
+  };
+
+  const handleCategory = (value) => {
+    setCategory(value);
+    setPage(1);
+  };
+
+  const goToPage = (next) => {
+    setPage(next);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const clearFilters = () => {
@@ -41,6 +65,7 @@ export default function Products() {
     setCategory('');
     setMinPrice('');
     setMaxPrice('');
+    setPage(1);
   };
 
   return (
@@ -65,7 +90,7 @@ export default function Products() {
             </div>
             <div className="col-md-2">
               <Form.Label className="small fw-semibold">Category</Form.Label>
-              <Form.Select value={category} onChange={(e) => setCategory(e.target.value)}>
+              <Form.Select value={category} onChange={(e) => handleCategory(e.target.value)}>
                 <option value="">All categories</option>
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>{c}</option>
@@ -103,12 +128,21 @@ export default function Products() {
 
         {isLoading ? (
           <div className="page-loading"><Spinner animation="border" /></div>
-        ) : data?.length ? (
-          <div className="product-grid">
-            {data.map((product) => (
-              <ProductCard key={product._id} productProp={product} />
-            ))}
-          </div>
+        ) : products.length ? (
+          <>
+            <div className="product-grid">
+              {products.map((product) => (
+                <ProductCard key={product._id} productProp={product} />
+              ))}
+            </div>
+            {!isSearching && pagination && (
+              <Pagination
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                onChange={goToPage}
+              />
+            )}
+          </>
         ) : (
           <div className="empty-state">
             <div className="empty-state__icon">🔍</div>

@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Spinner } from 'react-bootstrap';
@@ -6,25 +6,36 @@ import UserContext from '../context/UserContext';
 import ProductCard from '../components/ProductCard';
 import AppNavBar from '../components/AppNavBar';
 import Footer from '../components/Footer';
+import Pagination from '../components/Pagination';
 import { getAllProducts } from '../api/products';
+
+const PAGE_SIZE = 12;
 
 export default function AdminDashboard() {
   const { user } = useContext(UserContext);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-products'],
-    queryFn: getAllProducts,
+    queryKey: ['admin-products', page],
+    queryFn: () => getAllProducts({ page, limit: PAGE_SIZE }),
     enabled: user.isAdmin === true,
+    keepPreviousData: true,
   });
 
   if (user.isAdmin !== true) return <Navigate to="/" />;
 
   const products = data?.products ?? [];
-  const activeCount = products.filter((p) => p.isActive).length;
-  const lowStockCount = products.filter((p) => p.stock <= 5 && p.stock > 0).length;
-  const outOfStockCount = products.filter((p) => p.stock === 0).length;
+  const pagination = data?.pagination;
+  const stats = data?.stats ?? { total: 0, active: 0, lowStock: 0, outOfStock: 0 };
+
+  const goToPage = (next) => {
+    setPage(next);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const refreshProducts = () => queryClient.invalidateQueries({ queryKey: ['admin-products'] });
 
   return (
     <>
@@ -47,19 +58,19 @@ export default function AdminDashboard() {
           </div>
           <div className="admin-stats">
             <div className="admin-stat">
-              <strong>{products.length}</strong>
+              <strong>{stats.total}</strong>
               Total products
             </div>
             <div className="admin-stat">
-              <strong>{activeCount}</strong>
+              <strong>{stats.active}</strong>
               Active
             </div>
             <div className="admin-stat">
-              <strong>{lowStockCount}</strong>
+              <strong>{stats.lowStock}</strong>
               Low stock
             </div>
             <div className="admin-stat">
-              <strong>{outOfStockCount}</strong>
+              <strong>{stats.outOfStock}</strong>
               Out of stock
             </div>
           </div>
@@ -68,15 +79,24 @@ export default function AdminDashboard() {
         {isLoading ? (
           <div className="page-loading"><Spinner animation="border" /></div>
         ) : products.length ? (
-          <div className="product-grid">
-            {products.map((product) => (
-              <ProductCard
-                key={product._id}
-                productProp={product}
-                onUpdated={() => queryClient.invalidateQueries({ queryKey: ['admin-products'] })}
+          <>
+            <div className="product-grid">
+              {products.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  productProp={product}
+                  onUpdated={refreshProducts}
+                />
+              ))}
+            </div>
+            {pagination && (
+              <Pagination
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                onChange={goToPage}
               />
-            ))}
-          </div>
+            )}
+          </>
         ) : (
           <div className="empty-state">
             <div className="empty-state__icon">📦</div>
