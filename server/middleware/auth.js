@@ -6,12 +6,14 @@ const secret = process.env.SECRET;
 const TOKEN_COOKIE = "token";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-// Cookie options for the auth token. `secure` only in production so cookies
-// still work over http://localhost during development.
+// Cookie options for the auth token. In production the SPA is served from a
+// different origin than the API, so the cookie must be cross-site capable:
+// SameSite=None requires Secure. Locally we keep Lax over http://localhost.
+const isProduction = process.env.NODE_ENV === "production";
 const cookieOptions = () => ({
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
+  secure: isProduction,
+  sameSite: isProduction ? "none" : "lax",
   maxAge: ONE_DAY_MS,
 });
 
