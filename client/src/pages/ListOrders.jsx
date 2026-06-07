@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Navigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Form, Spinner, Badge, Button } from 'react-bootstrap';
@@ -8,6 +8,12 @@ import Footer from '../components/Footer';
 import { getAllOrders, updateOrderStatus } from '../api/orders';
 
 const STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'];
+
+const PAYMENT_METHODS = [
+  { value: 'cod', label: 'Cash on Delivery' },
+  { value: 'gcash', label: 'GCash' },
+  { value: 'grabpay', label: 'GrabPay' },
+];
 
 const statusVariant = {
   pending: 'warning',
@@ -21,11 +27,13 @@ const statusVariant = {
 export default function ListOrders() {
   const { user } = useContext(UserContext);
   const queryClient = useQueryClient();
+  const [filters, setFilters] = useState({ status: '', paymentMethod: '', sort: 'newest' });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['all-orders'],
-    queryFn: getAllOrders,
+    queryKey: ['all-orders', filters],
+    queryFn: () => getAllOrders(filters),
     enabled: user.isAdmin === true,
+    keepPreviousData: true,
   });
 
   const statusMutation = useMutation({
@@ -36,6 +44,10 @@ export default function ListOrders() {
   if (!user.isAdmin) return <Navigate to="/" />;
 
   const orders = data?.orders ?? [];
+  const hasActiveFilters = filters.status || filters.paymentMethod || filters.sort !== 'newest';
+
+  const setFilter = (key, value) => setFilters((prev) => ({ ...prev, [key]: value }));
+  const resetFilters = () => setFilters({ status: '', paymentMethod: '', sort: 'newest' });
 
   return (
     <>
@@ -49,6 +61,56 @@ export default function ListOrders() {
           <Button as={Link} to="/admin" variant="outline-dark" size="sm">
             ← Back to Dashboard
           </Button>
+        </div>
+
+        <div className="search-panel mb-4">
+          <Form className="row g-3 align-items-end">
+            <div className="col-md-3">
+              <Form.Label className="small fw-semibold">Status</Form.Label>
+              <Form.Select
+                value={filters.status}
+                onChange={(e) => setFilter('status', e.target.value)}
+              >
+                <option value="">All statuses</option>
+                {STATUSES.map((s) => (
+                  <option key={s} value={s} className="text-capitalize">{s}</option>
+                ))}
+              </Form.Select>
+            </div>
+            <div className="col-md-3">
+              <Form.Label className="small fw-semibold">Payment method</Form.Label>
+              <Form.Select
+                value={filters.paymentMethod}
+                onChange={(e) => setFilter('paymentMethod', e.target.value)}
+              >
+                <option value="">All methods</option>
+                {PAYMENT_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </Form.Select>
+            </div>
+            <div className="col-md-3">
+              <Form.Label className="small fw-semibold">Sort by date</Form.Label>
+              <Form.Select
+                value={filters.sort}
+                onChange={(e) => setFilter('sort', e.target.value)}
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+              </Form.Select>
+            </div>
+            <div className="col-md-3">
+              <Button
+                type="button"
+                variant="outline-secondary"
+                className="w-100"
+                onClick={resetFilters}
+                disabled={!hasActiveFilters}
+              >
+                Reset filters
+              </Button>
+            </div>
+          </Form>
         </div>
 
         {isLoading ? (
@@ -101,8 +163,15 @@ export default function ListOrders() {
         ) : (
           <div className="empty-state">
             <div className="empty-state__icon">📋</div>
-            <h4>No orders yet</h4>
-            <p className="text-muted">Orders will appear here once customers start purchasing.</p>
+            <h4>{hasActiveFilters ? 'No matching orders' : 'No orders yet'}</h4>
+            <p className="text-muted mb-3">
+              {hasActiveFilters
+                ? 'No orders match the selected filters.'
+                : 'Orders will appear here once customers start purchasing.'}
+            </p>
+            {hasActiveFilters && (
+              <Button variant="dark" onClick={resetFilters}>Reset filters</Button>
+            )}
           </div>
         )}
       </div>

@@ -118,6 +118,16 @@ module.exports.getAuthenticatedUserOrders = async (req, res) => {
 };
 
 // ========== GET ALL ORDERS (Admin Only) ==========
+const ORDER_STATUSES = [
+  "pending",
+  "paid",
+  "shipped",
+  "delivered",
+  "cancelled",
+  "refunded",
+];
+const PAYMENT_METHODS = ["cod", "gcash", "grabpay"];
+
 module.exports.getAllOrders = async (req, res) => {
   try {
     const userData = auth.decode(req.headers.authorization);
@@ -126,7 +136,18 @@ module.exports.getAllOrders = async (req, res) => {
       return res.status(403).json({ error: "Admin privileges required." });
     }
 
-    const orders = await Order.find({})
+    const filter = {};
+    if (ORDER_STATUSES.includes(req.query.status)) {
+      filter.status = req.query.status;
+    }
+    if (PAYMENT_METHODS.includes(req.query.paymentMethod)) {
+      filter.paymentMethod = req.query.paymentMethod;
+    }
+
+    const sortOrder = req.query.sort === "oldest" ? 1 : -1;
+
+    const orders = await Order.find(filter)
+      .sort({ purchasedOn: sortOrder })
       .populate("userId", "email")
       .populate("products.productId", "name price");
 
