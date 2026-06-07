@@ -5,7 +5,7 @@
   --aster-surface: #ffffff;
   --aster-surface-raised: #fafafa;
   --aster-text: #18181b;
-  --aster-muted: #71717a;
+  --aster-muted: #5c5c66;
   --aster-border: #e4e4e7;
   --aster-primary: #18181b;
   --aster-primary-hover: #3f3f46;
@@ -1095,4 +1095,37 @@ hr {
 /* Bootstrap spinner inherits current color */
 .page-loading .spinner-border {
   color: var(--aster-text);
+}
+
+/* ── Accessibility ── */
+
+/* Consistent, visible keyboard focus across interactive elements.
+   Mouse clicks stay clean thanks to :focus-visible. */
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+.nav-link:focus-visible,
+.navbar-brand:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.pagination-bar__btn:focus-visible,
+.pagination-bar__page:focus-visible,
+.order-history-card__header:focus-visible,
+.carousel-highlight .carousel-control-prev:focus-visible,
+.carousel-highlight .carousel-control-next:focus-visible {
+  outline: 3px solid var(--aster-accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Honor users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

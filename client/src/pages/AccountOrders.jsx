@@ -294,7 +294,7 @@ export default function AccountOrders() {
                 </div>
               </div>
             )}
-            <div className="order-history-list">
+            <div className="order-history-list" aria-label="Your orders">
               {orders.map((order) => (
                 <OrderCard
                   key={order._id}

@@ -1,13 +1,28 @@
 import { Carousel, Button, Spinner } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import UserContext from '../context/UserContext';
 import { getActiveProducts } from '../api/products';
 import ProductImage from './ProductImage';
 
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mql.matches);
+    const handler = (e) => setReduced(e.matches);
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
+
+  return reduced;
+}
+
 export default function Highlight() {
   const { user } = useContext(UserContext);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['home-products'],
@@ -44,7 +59,13 @@ export default function Highlight() {
   }
 
   return (
-    <Carousel className="carousel-highlight carousel-highlight--fixed">
+    <Carousel
+      className="carousel-highlight carousel-highlight--fixed"
+      aria-label="Featured products"
+      aria-roledescription="carousel"
+      interval={prefersReducedMotion ? null : 5000}
+      pause="hover"
+    >
       {products.map((product) => (
         <Carousel.Item key={product._id} className="hero-slide">
           <div className="container-fluid hero-slide__inner">
