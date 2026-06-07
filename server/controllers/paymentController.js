@@ -67,20 +67,7 @@ module.exports.handleWebhook = async (req, res) => {
     : JSON.stringify(req.body);
   const signature = req.headers["paymongo-signature"];
 
-  // #region agent log
-  console.log("[WEBHOOK] received", {
-    hasSignature: Boolean(signature),
-    secretConfigured: Boolean(process.env.PAYMONGO_WEBHOOK_SECRET),
-    rawBodyIsBuffer: Buffer.isBuffer(req.body),
-    contentType: req.headers["content-type"],
-  });
-  // #endregion
-
-  const signatureValid = verifyWebhookSignature(rawBody, signature);
-  // #region agent log
-  console.log("[WEBHOOK] signature check", { valid: signatureValid });
-  // #endregion
-  if (!signatureValid) {
+  if (!verifyWebhookSignature(rawBody, signature)) {
     return res.status(401).json({ error: "Invalid webhook signature." });
   }
 
@@ -95,14 +82,6 @@ module.exports.handleWebhook = async (req, res) => {
   const eventType = event?.data?.attributes?.type || event?.data?.type;
   const resource = event?.data?.attributes?.data || event?.data?.data;
 
-  // #region agent log
-  console.log("[WEBHOOK] event parsed", {
-    eventType,
-    matchesExpected: eventType === "checkout_session.payment.paid",
-    resourceType: resource?.type,
-  });
-  // #endregion
-
   // Acknowledge unrelated events so PayMongo stops retrying.
   if (eventType !== "checkout_session.payment.paid") {
     return res.status(200).json({ received: true });
@@ -114,40 +93,18 @@ module.exports.handleWebhook = async (req, res) => {
     const paymentId =
       attrs.payments?.[0]?.id || attrs.payment_intent?.id || undefined;
 
-    // #region agent log
-    console.log("[WEBHOOK] order resolve", {
-      orderId,
-      hasMetadataOrderId: Boolean(attrs.metadata?.orderId),
-      hasReferenceNumber: Boolean(attrs.reference_number),
-      paymentId,
-    });
-    // #endregion
-
     if (orderId) {
       const order = await Order.findById(orderId);
-      // #region agent log
-      console.log("[WEBHOOK] order lookup", {
-        orderId,
-        found: Boolean(order),
-        currentStatus: order?.status,
-      });
-      // #endregion
       // Idempotent: only transition a still-pending order.
       if (order && order.status === "pending") {
         order.status = "paid";
         if (paymentId) order.paymongoPaymentId = paymentId;
         await order.save();
-        // #region agent log
-        console.log("[WEBHOOK] order updated -> paid", { orderId });
-        // #endregion
       }
     }
 
     res.status(200).json({ received: true });
   } catch (err) {
-    // #region agent log
-    console.error("[WEBHOOK] processing error", { message: err.message });
-    // #endregion
     res.status(500).json({ error: "Failed to process webhook." });
   }
 };
