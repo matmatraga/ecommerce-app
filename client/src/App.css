@@ -437,6 +437,61 @@ body {
   gap: 1.5rem;
 }
 
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 2.5rem;
+}
+
+.pagination-bar__pages {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pagination-bar__btn,
+.pagination-bar__page {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 0.75rem;
+  border: 1px solid var(--aster-border);
+  border-radius: 8px;
+  background: var(--aster-surface);
+  color: var(--aster-text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--aster-transition), border-color var(--aster-transition);
+}
+
+.pagination-bar__btn:hover:not(:disabled),
+.pagination-bar__page:hover {
+  border-color: var(--aster-text);
+  background: var(--aster-surface-raised);
+}
+
+.pagination-bar__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pagination-bar__page--active {
+  background: var(--aster-text);
+  color: var(--aster-surface);
+  border-color: var(--aster-text);
+}
+
+.pagination-bar__ellipsis {
+  padding: 0 0.35rem;
+  color: var(--aster-muted);
+}
+
 .product-card {
   background: var(--aster-surface);
   border: 1px solid var(--aster-border);

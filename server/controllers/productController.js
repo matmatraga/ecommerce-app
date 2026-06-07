@@ -37,6 +37,26 @@ module.exports.validateUpdateProduct = [
 ];
 
 // ========================
+// Helpers
+// ========================
+
+// Parses ?page= & ?limit= into safe, bounded values for pagination.
+const getPaginationParams = (query, { defaultLimit = 12, maxLimit = 60 } = {}) => {
+  const page = Math.max(1, parseInt(query.page, 10) || 1);
+  const limit = Math.min(maxLimit, Math.max(1, parseInt(query.limit, 10) || defaultLimit));
+  return { page, limit, skip: (page - 1) * limit };
+};
+
+const buildPaginationMeta = (page, limit, total) => ({
+  page,
+  limit,
+  total,
+  totalPages: Math.max(1, Math.ceil(total / limit)),
+  hasPrev: page > 1,
+  hasNext: page * limit < total,
+});
+
+// ========================
 // Controller Methods
 // ========================
 
@@ -84,10 +104,20 @@ module.exports.getAllProducts = async (req, res) => {
       return res.status(403).json({ error: "Admin privileges required." });
     }
 
-    const products = await Product.find({});
+    const { page, limit, skip } = getPaginationParams(req.query);
+    const [products, total, active, outOfStock, lowStock] = await Promise.all([
+      Product.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Product.countDocuments({}),
+      Product.countDocuments({ isActive: true }),
+      Product.countDocuments({ stock: 0 }),
+      Product.countDocuments({ stock: { $gt: 0, $lte: 5 } }),
+    ]);
+
     res.status(200).json({
       message: "All products retrieved successfully.",
       products,
+      pagination: buildPaginationMeta(page, limit, total),
+      stats: { total, active, lowStock, outOfStock },
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to retrieve products." });
@@ -100,10 +130,17 @@ module.exports.getAllActiveProducts = async (req, res) => {
     if (req.query.category) {
       filter.category = req.query.category;
     }
-    const products = await Product.find(filter);
+
+    const { page, limit, skip } = getPaginationParams(req.query);
+    const [products, total] = await Promise.all([
+      Product.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Product.countDocuments(filter),
+    ]);
+
     res.status(200).json({
       message: "All active products retrieved successfully.",
       products,
+      pagination: buildPaginationMeta(page, limit, total),
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to retrieve active products." });

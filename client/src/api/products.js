@@ -5,7 +5,10 @@ export const getActiveProducts = (params = {}) => {
   return apiRequest(`/products${query ? `?${query}` : ''}`);
 };
 
-export const getAllProducts = () => apiRequest('/products/all');
+export const getAllProducts = (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  return apiRequest(`/products/all${query ? `?${query}` : ''}`);
+};
 
 export const getProduct = (id) => apiRequest(`/products/${id}`);
 
