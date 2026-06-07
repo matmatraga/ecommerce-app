@@ -9,6 +9,7 @@ const {
   updateProductInformation,
   archiveProduct,
   unarchiveProduct,
+  deleteProduct,
   searchProductsByName,
   searchProductsByPrice,
   addProductReview,
@@ -40,6 +41,9 @@ router.patch("/:productId/archive", verify, requireAdmin, archiveProduct);
 
 // Unarchive a product
 router.patch("/:productId/unarchive", verify, requireAdmin, unarchiveProduct);
+
+// Permanently delete a product
+router.delete("/:productId", verify, requireAdmin, deleteProduct);
 
 // ========== Public Routes ==========
 
