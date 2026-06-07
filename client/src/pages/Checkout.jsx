@@ -132,9 +132,14 @@ export default function Checkout() {
                       <option value="gcash">GCash</option>
                       <option value="grabpay">GrabPay</option>
                     </Form.Select>
-                    {(paymentMethod === 'gcash' || paymentMethod === 'grabpay') && (
+                    {paymentMethod === 'cod' ? (
                       <Form.Text className="text-muted">
-                        Payment instructions will be sent after you place the order.
+                        Pay in cash when your order is delivered — no upfront payment needed.
+                      </Form.Text>
+                    ) : (
+                      <Form.Text className="text-muted">
+                        After placing your order, you&apos;ll get the {paymentMethod === 'gcash' ? 'GCash' : 'GrabPay'} account
+                        details and a reference number to complete payment.
                       </Form.Text>
                     )}
                   </Form.Group>

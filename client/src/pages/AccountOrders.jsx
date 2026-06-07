@@ -7,6 +7,7 @@ import UserContext from '../context/UserContext';
 import AppNavBar from '../components/AppNavBar';
 import Footer from '../components/Footer';
 import ProductImage from '../components/ProductImage';
+import PaymentInstructions from '../components/PaymentInstructions';
 import { getMyOrders, cancelOrder } from '../api/orders';
 import {
   ORDER_STATUS_VARIANT,
@@ -177,6 +178,9 @@ function OrderCard({ order, expanded, onToggle, onCancel, isCancelling }) {
                   <p className="mb-0">
                     {PAYMENT_METHOD_LABEL[order.paymentMethod] || order.paymentMethod || '—'}
                   </p>
+                  {order.status === 'pending' && (
+                    <PaymentInstructions order={order} className="mt-3" />
+                  )}
                 </section>
 
                 <section className="order-history-section mt-4">

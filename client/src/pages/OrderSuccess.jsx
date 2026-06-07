@@ -4,6 +4,7 @@ import { useContext } from 'react';
 import UserContext from '../context/UserContext';
 import AppNavBar from '../components/AppNavBar';
 import Footer from '../components/Footer';
+import PaymentInstructions from '../components/PaymentInstructions';
 import { formatOrderId, PAYMENT_METHOD_LABEL } from '../utils/orderDisplay';
 
 export default function OrderSuccess() {
@@ -47,6 +48,7 @@ export default function OrderSuccess() {
             Payment: {PAYMENT_METHOD_LABEL[order.paymentMethod] || order.paymentMethod}
           </p>
           <p className="mb-3">Total: ₱{Number(order.totalAmount).toFixed(2)}</p>
+          <PaymentInstructions order={order} className="mb-3 text-start" />
           <div className="d-flex flex-wrap gap-2 justify-content-center">
             <Button as={Link} to="/account/orders" variant="dark">
               View Orders
