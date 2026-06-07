@@ -9,6 +9,8 @@ import Footer from '../components/Footer';
 import { useQuery } from '@tanstack/react-query';
 import { getCart } from '../api/cart';
 import { createOrder } from '../api/orders';
+import { createCheckoutSession } from '../api/payments';
+import { ONLINE_PAYMENT_METHODS, PAYMENT_METHOD_LABEL } from '../utils/orderDisplay';
 
 const emptyAddress = {
   fullName: '',
@@ -52,10 +54,17 @@ export default function Checkout() {
     setLoading(true);
     try {
       const res = await createOrder({ shippingAddress: address, paymentMethod });
+
+      if (ONLINE_PAYMENT_METHODS.includes(paymentMethod)) {
+        const { checkoutUrl } = await createCheckoutSession(res.order._id);
+        if (!checkoutUrl) throw new Error('Could not start online payment.');
+        window.location.href = checkoutUrl;
+        return;
+      }
+
       navigate('/order/success', { state: { order: res.order } });
     } catch (err) {
       Swal.fire({ title: 'Checkout failed', icon: 'error', text: err.message });
-    } finally {
       setLoading(false);
     }
   };
@@ -131,6 +140,7 @@ export default function Checkout() {
                       <option value="cod">Cash on Delivery</option>
                       <option value="gcash">GCash</option>
                       <option value="grabpay">GrabPay</option>
+                      <option value="qrph">QRPh</option>
                     </Form.Select>
                     {paymentMethod === 'cod' ? (
                       <Form.Text className="text-muted">
@@ -138,8 +148,7 @@ export default function Checkout() {
                       </Form.Text>
                     ) : (
                       <Form.Text className="text-muted">
-                        After placing your order, you&apos;ll get the {paymentMethod === 'gcash' ? 'GCash' : 'GrabPay'} account
-                        details and a reference number to complete payment.
+                        You&apos;ll be redirected to PayMongo&apos;s secure checkout to pay with {PAYMENT_METHOD_LABEL[paymentMethod]}.
                       </Form.Text>
                     )}
                   </Form.Group>

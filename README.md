@@ -1,13 +1,13 @@
 # ASTER E-Commerce
 
-Full-stack MERN e-commerce application built as a freelance portfolio project. Features product catalog, cart, JWT auth with admin RBAC, Philippine payment options (COD, GCash, GrabPay), order management, reviews, and search.
+Full-stack MERN e-commerce application built as a freelance portfolio project. Features product catalog, cart, JWT auth with admin RBAC, Philippine payment options (COD plus PayMongo GCash, GrabPay, QRPh), order management, reviews, and search.
 
 ## Stack
 
 - **Frontend:** React 18, Vite, React Router, TanStack Query, Bootstrap
 - **Backend:** Node.js, Express, Mongoose, JWT
 - **Database:** MongoDB
-- **Payments:** Cash on Delivery, GCash, GrabPay (manual confirmation)
+- **Payments:** Cash on Delivery plus PayMongo hosted checkout (GCash, GrabPay, QRPh)
 
 ## Project structure
 
@@ -76,7 +76,9 @@ npm run dev
 All orders go through `POST /orders` with a chosen payment method:
 
 - **COD** — order is placed as `pending`; pay on delivery
-- **GCash / GrabPay** — order is placed as `pending`; admin confirms payment manually
+- **GCash / GrabPay / QRPh** — order is placed as `pending`, then the shopper is redirected to a PayMongo hosted checkout (`POST /payments/checkout`). PayMongo notifies the server via webhook (`POST /webhooks/paymongo`), which marks the order `paid`
+
+Online payments require `PAYMONGO_SECRET_KEY` and `PAYMONGO_WEBHOOK_SECRET` (use test keys first). Without them, only Cash on Delivery is available. Webhooks need a public URL — use a tunnel such as ngrok pointing to `/webhooks/paymongo` for local testing.
 
 ## Security
 
@@ -94,6 +96,7 @@ All orders go through `POST /orders` with a chosen payment method:
 | Products | `GET /products`, `GET /products/all`, `PATCH /products/:id/archive` |
 | Cart | `GET/POST /carts`, `PUT /carts/quantity`, `PATCH /carts/clear` |
 | Orders | `POST /orders`, `GET /orders/authenticatedorder`, `PATCH /orders/:id/cancel` |
+| Payments | `POST /payments/checkout`, `POST /webhooks/paymongo` |
 
 ## Deployment
 
@@ -115,7 +118,7 @@ npm test
 
 - Reconciled legacy API with modern Vite + TanStack Query client
 - Stock validation on cart and checkout
-- Philippine-focused payment options (COD, GCash, GrabPay)
+- Philippine-focused payments: COD plus PayMongo hosted checkout (GCash, GrabPay, QRPh)
 - Admin order status management
 - Product search, filters, and reviews
 

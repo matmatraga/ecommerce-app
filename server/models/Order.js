@@ -47,8 +47,14 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["cod", "gcash", "grabpay"],
+      enum: ["cod", "gcash", "grabpay", "qrph"],
       default: "cod",
+    },
+    paymongoCheckoutId: {
+      type: String,
+    },
+    paymongoPaymentId: {
+      type: String,
     },
     shippingAddress: {
       fullName: String,

@@ -20,22 +20,11 @@ export const PAYMENT_METHOD_LABEL = {
   cod: 'Cash on Delivery',
   gcash: 'GCash',
   grabpay: 'GrabPay',
+  qrph: 'QRPh',
 };
 
-// Shop-side e-wallet details, configurable via Vite env so the demo can ship
-// with placeholders and a real deployment can point to an actual account.
-export const SHOP_PAYMENT_DETAILS = {
-  gcash: {
-    label: 'GCash',
-    accountName: import.meta.env.VITE_SHOP_GCASH_NAME || 'ASTER Gaming',
-    number: import.meta.env.VITE_SHOP_GCASH_NUMBER || '0917 000 0000',
-  },
-  grabpay: {
-    label: 'GrabPay',
-    accountName: import.meta.env.VITE_SHOP_GRABPAY_NAME || 'ASTER Gaming',
-    number: import.meta.env.VITE_SHOP_GRABPAY_NUMBER || '0917 000 0000',
-  },
-};
+// Methods that are settled online through PayMongo hosted checkout.
+export const ONLINE_PAYMENT_METHODS = ['gcash', 'grabpay', 'qrph'];
 
 export const ORDER_PROGRESS_STEPS = ['pending', 'paid', 'shipped', 'delivered'];
 
@@ -51,11 +40,14 @@ export function getOrderBreakdown(order) {
 }
 
 // Returns payment guidance tailored to the method and whether the order is
-// still awaiting payment. Returns null when there is nothing actionable to show.
+// still awaiting payment. For online (PayMongo) methods, `canResume` signals
+// that the shopper can be sent to the hosted checkout to complete payment.
+// Returns null when there is nothing actionable to show.
 export function getPaymentInstructions(order) {
   if (!order) return null;
   const { paymentMethod, status } = order;
   const awaitingPayment = status === 'pending';
+  const label = PAYMENT_METHOD_LABEL[paymentMethod] || paymentMethod;
 
   if (paymentMethod === 'cod') {
     return {
@@ -64,8 +56,7 @@ export function getPaymentInstructions(order) {
       intro: awaitingPayment
         ? 'No upfront payment needed — pay in cash when your order arrives.'
         : 'This order was placed with Cash on Delivery.',
-      account: null,
-      reference: null,
+      canResume: false,
       steps: awaitingPayment
         ? [
             'Prepare the exact total amount for a smooth handoff.',
@@ -75,24 +66,15 @@ export function getPaymentInstructions(order) {
     };
   }
 
-  const details = SHOP_PAYMENT_DETAILS[paymentMethod];
-  if (details) {
+  if (ONLINE_PAYMENT_METHODS.includes(paymentMethod)) {
     return {
       tone: awaitingPayment ? 'warning' : 'success',
-      heading: `Pay via ${details.label}`,
+      heading: awaitingPayment ? 'Complete your payment' : 'Payment confirmed',
       intro: awaitingPayment
-        ? `Send your payment to confirm this order — we'll update the status once received.`
-        : `Payment received via ${details.label}. Thank you!`,
-      account: awaitingPayment ? details : null,
-      reference: awaitingPayment ? formatOrderId(order._id) : null,
-      steps: awaitingPayment
-        ? [
-            `Open your ${details.label} app and send the total amount.`,
-            `Send to ${details.accountName} (${details.number}).`,
-            `Add your order number ${formatOrderId(order._id)} as the reference/note.`,
-            'We verify payments manually and will mark your order as paid shortly.',
-          ]
-        : [],
+        ? `This order is awaiting payment. Pay securely via ${label} through PayMongo to confirm it.`
+        : `We received your ${label} payment. Thank you!`,
+      canResume: awaitingPayment,
+      steps: [],
     };
   }
 
