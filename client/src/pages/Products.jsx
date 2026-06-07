@@ -4,7 +4,6 @@ import { Form, Button, Spinner } from 'react-bootstrap';
 import Announcement from '../components/Announcement';
 import ProductCard from '../components/ProductCard';
 import AppNavBar from '../components/AppNavBar';
-import Newsletter from '../components/Newsletter';
 import Footer from '../components/Footer';
 import Pagination from '../components/Pagination';
 import { getActiveProducts, searchByName, searchByPrice } from '../api/products';
@@ -152,7 +151,6 @@ export default function Products() {
           </div>
         )}
       </div>
-      <Newsletter />
       <Footer />
     </>
   );

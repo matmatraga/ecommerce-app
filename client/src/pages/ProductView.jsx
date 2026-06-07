@@ -7,7 +7,6 @@ import UserContext from '../context/UserContext';
 import { useContext } from 'react';
 import Announcement from '../components/Announcement';
 import AppNavBar from '../components/AppNavBar';
-import Newsletter from '../components/Newsletter';
 import Footer from '../components/Footer';
 import ProductImage from '../components/ProductImage';
 import { getProduct, addReview } from '../api/products';
@@ -71,13 +70,15 @@ export default function ProductView() {
       <Announcement />
       <AppNavBar />
       <Container className="py-5">
-        <Row className="g-4 justify-content-center">
-          <Col lg={5}>
-            <div className="product-detail-card">
-              <ProductImage src={product?.img} alt={product?.name} variant="detail" />
+        <Row className="g-4 align-items-start">
+          <Col lg={6}>
+            <div className="product-detail-image-sticky">
+              <div className="product-detail-card">
+                <ProductImage src={product?.img} alt={product?.name} variant="detail" />
+              </div>
             </div>
           </Col>
-          <Col lg={5}>
+          <Col lg={6}>
             <p className="text-muted text-uppercase small fw-semibold mb-1">
               {product?.category || 'peripheral'}
             </p>
@@ -95,96 +96,99 @@ export default function ProductView() {
               {stockLabel(product?.stock)}
             </span>
 
-            <p className="text-muted my-3">{product?.description}</p>
+            <p className="text-muted my-3 product-detail-description">{product?.description}</p>
 
-            {user.id && !user.isAdmin && product?.stock > 0 && (
-              <div className="d-flex align-items-center gap-2 mb-3">
-                <span className="fw-semibold small">Qty:</span>
-                <Button
-                  variant="outline-dark"
-                  size="sm"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                >
-                  −
-                </Button>
-                <span className="px-2 fw-semibold">{quantity}</span>
-                <Button
-                  variant="outline-dark"
-                  size="sm"
-                  onClick={() => setQuantity(Math.min(product?.stock, quantity + 1))}
-                >
-                  +
-                </Button>
+            {!user.isAdmin && (
+              <div className="product-buy-box">
+                {user.id && product?.stock > 0 && (
+                  <div className="d-flex align-items-center gap-2 mb-3">
+                    <span className="fw-semibold small">Qty:</span>
+                    <Button
+                      variant="outline-dark"
+                      size="sm"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    >
+                      −
+                    </Button>
+                    <span className="px-2 fw-semibold">{quantity}</span>
+                    <Button
+                      variant="outline-dark"
+                      size="sm"
+                      onClick={() => setQuantity(Math.min(product?.stock, quantity + 1))}
+                    >
+                      +
+                    </Button>
+                  </div>
+                )}
+
+                {user.id ? (
+                  <Button
+                    variant="dark"
+                    size="lg"
+                    className="w-100"
+                    disabled={!product?.stock || cartMutation.isPending}
+                    onClick={() => cartMutation.mutate()}
+                  >
+                    {product?.stock ? 'Add to Cart' : 'Out of Stock'}
+                  </Button>
+                ) : (
+                  <Button as={Link} to="/login" variant="dark" size="lg" className="w-100">
+                    Login to add to cart
+                  </Button>
+                )}
               </div>
             )}
-
-            {user.id && !user.isAdmin ? (
-              <Button
-                variant="dark"
-                size="lg"
-                className="w-100"
-                disabled={!product?.stock || cartMutation.isPending}
-                onClick={() => cartMutation.mutate()}
-              >
-                {product?.stock ? 'Add to Cart' : 'Out of Stock'}
-              </Button>
-            ) : !user.id ? (
-              <Button as={Link} to="/login" variant="dark" size="lg" className="w-100">
-                Login to add to cart
-              </Button>
-            ) : null}
-
-            <hr className="my-4" />
-
-            <h5 className="fw-semibold mb-3">Customer Reviews</h5>
-            {user.id && !user.isAdmin && (
-              <Form
-                className="mb-4 review-form-panel"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  reviewMutation.mutate();
-                }}
-              >
-                <Form.Group className="mb-2">
-                  <Form.Label className="small fw-semibold">Your rating</Form.Label>
-                  <Form.Select value={rating} onChange={(e) => setRating(e.target.value)}>
-                    {[5, 4, 3, 2, 1].map((n) => (
-                      <option key={n} value={n}>{n} stars</option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-                <Form.Control
-                  as="textarea"
-                  rows={2}
-                  placeholder="Share your experience..."
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                  className="mb-2"
-                />
-                <Button type="submit" size="sm" variant="dark" disabled={reviewMutation.isPending}>
-                  Submit Review
-                </Button>
-              </Form>
-            )}
-            <ListGroup variant="flush">
-              {product?.reviews?.length ? (
-                product.reviews.map((r, i) => (
-                  <ListGroup.Item key={i} className="px-0 border-bottom">
-                    <div className="d-flex justify-content-between">
-                      <strong>{r.name}</strong>
-                      <span className="rating-stars small">{renderStars(r.rating)}</span>
-                    </div>
-                    {r.comment && <p className="text-muted small mb-0 mt-1">{r.comment}</p>}
-                  </ListGroup.Item>
-                ))
-              ) : (
-                <ListGroup.Item className="px-0 text-muted">No reviews yet. Be the first!</ListGroup.Item>
-              )}
-            </ListGroup>
           </Col>
         </Row>
+
+        <section className="product-reviews-section mt-5 pt-4">
+          <h5 className="fw-semibold mb-3">Customer Reviews</h5>
+          {user.id && !user.isAdmin && (
+            <Form
+              className="mb-4 review-form-panel"
+              onSubmit={(e) => {
+                e.preventDefault();
+                reviewMutation.mutate();
+              }}
+            >
+              <Form.Group className="mb-2">
+                <Form.Label className="small fw-semibold">Your rating</Form.Label>
+                <Form.Select value={rating} onChange={(e) => setRating(e.target.value)}>
+                  {[5, 4, 3, 2, 1].map((n) => (
+                    <option key={n} value={n}>{n} stars</option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                placeholder="Share your experience..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="mb-2"
+              />
+              <Button type="submit" size="sm" variant="dark" disabled={reviewMutation.isPending}>
+                Submit Review
+              </Button>
+            </Form>
+          )}
+          <ListGroup variant="flush" className="product-reviews-list">
+            {product?.reviews?.length ? (
+              product.reviews.map((r, i) => (
+                <ListGroup.Item key={i} className="px-0 border-bottom">
+                  <div className="d-flex justify-content-between">
+                    <strong>{r.name}</strong>
+                    <span className="rating-stars small">{renderStars(r.rating)}</span>
+                  </div>
+                  {r.comment && <p className="text-muted small mb-0 mt-1">{r.comment}</p>}
+                </ListGroup.Item>
+              ))
+            ) : (
+              <ListGroup.Item className="px-0 text-muted">No reviews yet. Be the first!</ListGroup.Item>
+            )}
+          </ListGroup>
+        </section>
       </Container>
-      <Newsletter />
       <Footer />
     </>
   );

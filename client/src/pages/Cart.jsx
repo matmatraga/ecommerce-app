@@ -5,7 +5,6 @@ import { Container, Button, Spinner, Form } from 'react-bootstrap';
 import UserContext from '../context/UserContext';
 import Announcement from '../components/Announcement';
 import AppNavBar from '../components/AppNavBar';
-import Newsletter from '../components/Newsletter';
 import Footer from '../components/Footer';
 import ProductImage from '../components/ProductImage';
 import { getCart, updateQuantities, clearCart } from '../api/cart';
@@ -149,7 +148,6 @@ export default function Cart() {
           </div>
         )}
       </Container>
-      <Newsletter />
       <Footer />
     </>
   );

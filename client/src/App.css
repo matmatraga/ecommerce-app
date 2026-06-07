@@ -675,7 +675,45 @@ body {
   border-radius: 0;
   overflow: visible;
   box-shadow: none;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0;
+}
+
+.product-detail-image-sticky {
+  width: 100%;
+}
+
+@media (min-width: 992px) {
+  .product-detail-image-sticky {
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+
+.product-detail-description {
+  line-height: 1.65;
+  max-width: 52ch;
+}
+
+.product-buy-box {
+  background: var(--aster-surface);
+  border: 1px solid var(--aster-border);
+  border-radius: var(--aster-radius);
+  padding: 1.25rem;
+  box-shadow: var(--aster-shadow);
+  margin-top: 0.5rem;
+}
+
+.product-reviews-section {
+  border-top: 1px solid var(--aster-border);
+}
+
+.product-reviews-list {
+  background: transparent;
+}
+
+.product-reviews-list .list-group-item {
+  background: transparent;
+  color: var(--aster-text);
 }
 
 .product-detail-price {
