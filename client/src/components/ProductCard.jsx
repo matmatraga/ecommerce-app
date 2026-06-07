@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import UserContext from '../context/UserContext';
 import { useContext, useState } from 'react';
-import { archiveProduct, unarchiveProduct } from '../api/products';
+import { archiveProduct, unarchiveProduct, deleteProduct } from '../api/products';
 import ProductImage from './ProductImage';
 
 function stockBadgeVariant(stock) {
@@ -16,6 +16,8 @@ export default function ProductCard({ productProp, onUpdated }) {
   const { user } = useContext(UserContext);
   const { _id, name, img, isActive, stock, price } = productProp;
   const [active, setActive] = useState(isActive);
+
+  const [deleting, setDeleting] = useState(false);
 
   const toggleArchive = async () => {
     try {
@@ -31,6 +33,30 @@ export default function ProductCard({ productProp, onUpdated }) {
     } catch (err) {
       Swal.fire({ title: 'Error', icon: 'error', text: err.message });
     }
+  };
+
+  const handleDelete = () => {
+    Swal.fire({
+      title: 'Delete this product?',
+      html: `<strong>${name}</strong> will be permanently removed from the catalog. This cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#dc3545',
+    }).then(async (result) => {
+      if (!result.isConfirmed) return;
+      setDeleting(true);
+      try {
+        await deleteProduct(_id);
+        Swal.fire({ title: 'Deleted', icon: 'success', text: 'Product removed from catalog.' });
+        onUpdated?.();
+      } catch (err) {
+        Swal.fire({ title: 'Error', icon: 'error', text: err.message });
+      } finally {
+        setDeleting(false);
+      }
+    });
   };
 
   return (
@@ -57,6 +83,14 @@ export default function ProductCard({ productProp, onUpdated }) {
               </Button>
               <Button variant="outline-secondary" size="sm" onClick={toggleArchive}>
                 {active ? 'Archive' : 'Unarchive'}
+              </Button>
+              <Button
+                variant="outline-danger"
+                size="sm"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
               </Button>
             </>
           ) : (

@@ -222,6 +222,27 @@ module.exports.unarchiveProduct = async (req, res) => {
   }
 };
 
+module.exports.deleteProduct = async (req, res) => {
+  try {
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ error: "Admin privileges required." });
+    }
+
+    const deletedProduct = await Product.findByIdAndDelete(req.params.productId);
+
+    if (!deletedProduct) {
+      return res.status(404).json({ error: "Product not found." });
+    }
+
+    res.status(200).json({
+      message: "Product deleted successfully.",
+      product: deletedProduct,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete product." });
+  }
+};
+
 // ========================
 // Search Products by Name
 // ========================

@@ -21,6 +21,9 @@ export const archiveProduct = (id) =>
 export const unarchiveProduct = (id) =>
   apiRequest(`/products/${id}/unarchive`, { method: 'PATCH' });
 
+export const deleteProduct = (id) =>
+  apiRequest(`/products/${id}`, { method: 'DELETE' });
+
 export const searchByName = (name) =>
   apiRequest(`/products/search/name?name=${encodeURIComponent(name)}`);
 
