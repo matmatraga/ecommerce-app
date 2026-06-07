@@ -8,10 +8,10 @@ export default function AppNavBar() {
   const { user } = useContext(UserContext);
 
   return (
-    <Navbar expand="lg" variant="dark" className="aster-navbar sticky-top">
+    <Navbar expand="lg" variant="dark" className="aster-navbar sticky-top" aria-label="Main navigation">
       <Container>
         <Navbar.Brand as={Link} to="/">ASTER</Navbar.Brand>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
+        <Navbar.Toggle aria-controls="basic-navbar-nav" aria-label="Toggle navigation menu" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="ms-auto align-items-lg-center">
             <Nav.Link as={NavLink} to="/" end>Home</Nav.Link>
