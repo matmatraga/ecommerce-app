@@ -22,6 +22,8 @@ module.exports.validateCreateProduct = [
     .optional()
     .isBoolean()
     .withMessage("isActive must be a boolean"),
+  body("stock").optional().isInt({ min: 0 }),
+  body("category").optional().isString(),
 ];
 
 module.exports.validateUpdateProduct = [
@@ -30,6 +32,8 @@ module.exports.validateUpdateProduct = [
   body("img").optional().notEmpty(),
   body("price").optional().isFloat({ gt: 0 }),
   body("isActive").optional().isBoolean(),
+  body("stock").optional().isInt({ min: 0 }),
+  body("category").optional().isString(),
 ];
 
 // ========================
@@ -52,7 +56,7 @@ module.exports.createProduct = async (req, res) => {
       return res.status(403).json({ error: "Admin privileges required." });
     }
 
-    const { name, description, img, price, isActive } = req.body;
+    const { name, description, img, price, isActive, stock, category } = req.body;
 
     const newProduct = new Product({
       name,
@@ -60,6 +64,8 @@ module.exports.createProduct = async (req, res) => {
       img,
       price,
       isActive,
+      stock: stock ?? 10,
+      category: category || "general",
     });
 
     const savedProduct = await newProduct.save();
@@ -90,7 +96,11 @@ module.exports.getAllProducts = async (req, res) => {
 
 module.exports.getAllActiveProducts = async (req, res) => {
   try {
-    const products = await Product.find({ isActive: true });
+    const filter = { isActive: true };
+    if (req.query.category) {
+      filter.category = req.query.category;
+    }
+    const products = await Product.find(filter);
     res.status(200).json({
       message: "All active products retrieved successfully.",
       products,
@@ -139,6 +149,8 @@ module.exports.updateProductInformation = async (req, res) => {
       img: req.body.img,
       price: req.body.price,
       isActive: req.body.isActive,
+      stock: req.body.stock,
+      category: req.body.category,
     };
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -222,7 +234,8 @@ module.exports.searchProductsByName = async (req, res) => {
     }
 
     const products = await Product.find({
-      name: { $regex: name, $options: "i" }, // case-insensitive
+      name: { $regex: name, $options: "i" },
+      isActive: true,
     });
 
     res.status(200).json({
@@ -250,6 +263,7 @@ module.exports.searchProductsByPrice = async (req, res) => {
     if (minPrice) query.price = { ...query.price, $gte: parseFloat(minPrice) };
     if (maxPrice) query.price = { ...query.price, $lte: parseFloat(maxPrice) };
 
+    query.isActive = true;
     const products = await Product.find(query);
 
     res.status(200).json({
@@ -258,5 +272,39 @@ module.exports.searchProductsByPrice = async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to search products by price." });
+  }
+};
+
+module.exports.addProductReview = async (req, res) => {
+  try {
+    const { rating, comment, name } = req.body;
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: "Rating must be between 1 and 5." });
+    }
+
+    const product = await Product.findById(req.params.productId);
+    if (!product) {
+      return res.status(404).json({ error: "Product not found." });
+    }
+
+    product.reviews.push({
+      userId: req.user?.id,
+      name: name || req.user?.email || "Anonymous",
+      rating,
+      comment: comment || "",
+    });
+
+    const totalRating = product.reviews.reduce((sum, r) => sum + r.rating, 0);
+    product.numReviews = product.reviews.length;
+    product.ratings = totalRating / product.numReviews;
+
+    await product.save();
+
+    res.status(201).json({
+      message: "Review added successfully.",
+      product,
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to add review." });
   }
 };

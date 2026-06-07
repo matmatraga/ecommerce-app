@@ -1,7 +1,48 @@
 const Order = require("../models/Order");
 const Cart = require("../models/Cart");
-const Product = require("../models/Product");
 const auth = require("../middleware/auth");
+const { calculateOrderTotals } = require("../utils/orderUtils");
+const { validateStock, decrementStock, restoreStock } = require("../utils/stockUtils");
+
+const buildOrderFromCart = async (cart, body = {}) => {
+  if (!cart || !cart.products.length) {
+    return { error: "Cart is empty.", status: 400 };
+  }
+
+  for (const item of cart.products) {
+    const stockCheck = await validateStock(
+      item.productId._id,
+      item.quantity,
+      0
+    );
+    if (!stockCheck.ok) {
+      return { error: stockCheck.error, status: stockCheck.status };
+    }
+  }
+
+  const products = cart.products.map((item) => {
+    const price = item.productId.price;
+    const subtotal = price * item.quantity;
+    return {
+      productId: item.productId._id,
+      quantity: item.quantity,
+      priceAtPurchase: price,
+      subtotal,
+    };
+  });
+
+  const subTotal = products.reduce((acc, p) => acc + p.subtotal, 0);
+  const totals = calculateOrderTotals(subTotal);
+
+  return {
+    products,
+    ...totals,
+    shippingAddress: body.shippingAddress,
+    paymentMethod: body.paymentMethod || "cod",
+  };
+};
+
+module.exports.buildOrderFromCart = buildOrderFromCart;
 
 // ========== CREATE ORDER ==========
 module.exports.createOrder = async (req, res) => {
@@ -21,39 +62,22 @@ module.exports.createOrder = async (req, res) => {
       return res.status(404).json({ message: "Cart not found." });
     }
 
-    // Compute subtotals for each product
-    const products = cart.products.map((item) => {
-      const price = item.productId.price;
-      const subtotal = price * item.quantity;
+    const orderData = await buildOrderFromCart(cart, req.body);
+    if (orderData.error) {
+      return res.status(orderData.status).json({ error: orderData.error });
+    }
 
-      return {
-        productId: item.productId._id,
-        quantity: item.quantity,
-        priceAtPurchase: price,
-        subtotal,
-      };
-    });
-
-    const subTotal = products.reduce((acc, p) => acc + p.subtotal, 0);
-    const salesTax = subTotal * 0.12;
-    const shippingFee = 40;
-    const total = subTotal + salesTax + shippingFee;
-
-    // Optional: retrieve shipping address and payment method from request
-    const { shippingAddress, paymentMethod } = req.body;
-
-    // Create order
     const newOrder = new Order({
       userId: userData.id,
-      products,
-      totalAmount: total,
-      shippingAddress,
-      paymentMethod,
+      products: orderData.products,
+      totalAmount: orderData.total,
+      shippingAddress: orderData.shippingAddress,
+      paymentMethod: orderData.paymentMethod,
+      status: "pending",
     });
 
+    await decrementStock(orderData.products);
     await newOrder.save();
-
-    // Clear cart after checkout
     await Cart.findByIdAndDelete(cart._id);
 
     res.status(201).json({
@@ -80,9 +104,9 @@ module.exports.getAuthenticatedUserOrders = async (req, res) => {
         .json({ error: "Admins cannot retrieve user orders." });
     }
 
-    const orders = await Order.find({ userId: userData.id }).sort({
-      createdAt: -1,
-    });
+    const orders = await Order.find({ userId: userData.id })
+      .sort({ createdAt: -1 })
+      .populate("products.productId", "name img price");
 
     res.status(200).json({
       message: "User orders retrieved successfully.",
@@ -105,10 +129,6 @@ module.exports.getAllOrders = async (req, res) => {
     const orders = await Order.find({})
       .populate("userId", "email")
       .populate("products.productId", "name price");
-
-    if (!orders.length) {
-      return res.status(404).json({ message: "No orders found." });
-    }
 
     res.status(200).json({
       message: "All orders retrieved successfully.",
@@ -175,6 +195,7 @@ module.exports.cancelOrder = async (req, res) => {
 
     order.status = "cancelled";
     await order.save();
+    await restoreStock(order.products);
 
     res.status(200).json({
       message: "Order cancelled successfully.",

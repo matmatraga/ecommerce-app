@@ -47,7 +47,7 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["cod", "card", "paypal", "gcash", "grabpay"],
+      enum: ["cod", "gcash", "grabpay"],
       default: "cod",
     },
     shippingAddress: {

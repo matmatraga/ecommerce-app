@@ -11,6 +11,7 @@ const {
   unarchiveProduct,
   searchProductsByName,
   searchProductsByPrice,
+  addProductReview,
 } = require("../controllers/productController");
 
 const { verify, requireAdmin } = require("../middleware/auth"); // assuming auth is centralized
@@ -42,16 +43,17 @@ router.patch("/:productId/unarchive", verify, requireAdmin, unarchiveProduct);
 
 // ========== Public Routes ==========
 
+// Search routes must be registered before /:productId
+router.get("/search/name", searchProductsByName);
+router.get("/search/price", searchProductsByPrice);
+
 // Get all active products (for all users)
 router.get("/", getAllActiveProducts);
 
 // Get a specific product by ID
 router.get("/:productId", getSingleProduct);
 
-// Get a specific product by name
-router.get("/search/name", searchProductsByName);
-
-// Get a specific product by price range
-router.get("/search/price", searchProductsByPrice);
+// Add review (authenticated)
+router.post("/:productId/reviews", verify, addProductReview);
 
 module.exports = router;

@@ -1,6 +1,6 @@
 const Cart = require("../models/Cart");
-const Product = require("../models/Product");
-const { calculateSubtotals } = require("../utils/cartUtils");
+const { calculateSubtotals, calculateTotal } = require("../utils/cartUtils");
+const { validateStock } = require("../utils/stockUtils");
 
 // ========== Add to Cart ==========
 module.exports.addToCart = async (req, res) => {
@@ -11,34 +11,43 @@ module.exports.addToCart = async (req, res) => {
 
     const { productId, quantity } = req.body;
 
-    const product = await Product.findById(productId);
-    if (!product) {
-      return res.status(404).json({ error: "Product not found." });
+    if (!quantity || quantity < 1) {
+      return res.status(400).json({ error: "Quantity must be at least 1." });
     }
 
     let cart = await Cart.findOne({ userId: req.user.id });
+    const existingItem = cart?.products.find(
+      (p) => p.productId.toString() === productId
+    );
+    const existingQty = existingItem ? existingItem.quantity : 0;
 
-    if (!cart) {
-      cart = new Cart({
+    const stockCheck = await validateStock(productId, quantity, existingQty);
+    if (!stockCheck.ok) {
+      return res.status(stockCheck.status).json({ error: stockCheck.error });
+    }
+
+    let cartDoc = cart;
+
+    if (!cartDoc) {
+      cartDoc = new Cart({
         userId: req.user.id,
-        products: [{ productId, quantity }]
+        products: [{ productId, quantity }],
       });
     } else {
-      const index = cart.products.findIndex(
+      const index = cartDoc.products.findIndex(
         (p) => p.productId.toString() === productId
       );
 
       if (index !== -1) {
-        cart.products[index].quantity += quantity;
+        cartDoc.products[index].quantity += quantity;
       } else {
-        cart.products.push({ productId, quantity });
+        cartDoc.products.push({ productId, quantity });
       }
     }
 
-    await cart.save();
+    await cartDoc.save();
 
-    // Populate and compute subtotal
-    const populatedCart = await Cart.findById(cart._id).populate({
+    const populatedCart = await Cart.findById(cartDoc._id).populate({
       path: "products.productId",
       model: "Product"
     });
@@ -48,10 +57,11 @@ module.exports.addToCart = async (req, res) => {
     res.status(200).json({
       message: "Cart updated successfully.",
       cart: {
-        _id: cart._id,
-        userId: cart.userId,
-        products: productsWithSubtotals
-      }
+        _id: cartDoc._id,
+        userId: cartDoc.userId,
+        products: productsWithSubtotals,
+      },
+      total: calculateTotal(populatedCart),
     });
   } catch (err) {
 	console.error("Cart Update Error:", err);
@@ -71,20 +81,25 @@ module.exports.getUserCart = async (req, res) => {
       model: "Product"
     });
 
-    if (!cart) {
-      return res.status(404).json({ error: "Cart not found." });
-	}
-	  
-	const productsWithSubtotals = calculateSubtotals(cart);
+    if (!cart || cart.products.length === 0) {
+      return res.status(200).json({
+        message: "Cart retrieved successfully.",
+        cart: { products: [] },
+        total: 0,
+      });
+    }
 
-	  res.status(200).json({
-		message: "Cart retrieved successfully.",
-		cart: {
-			_id: cart._id,
-			userId: cart.userId,
-			products: productsWithSubtotals
-		}
-	});
+    const productsWithSubtotals = calculateSubtotals(cart);
+
+    res.status(200).json({
+      message: "Cart retrieved successfully.",
+      cart: {
+        _id: cart._id,
+        userId: cart.userId,
+        products: productsWithSubtotals,
+      },
+      total: calculateTotal(cart),
+    });
   } catch (err) {
     res.status(500).json({ error: "Failed to retrieve cart." });
   }
@@ -107,17 +122,26 @@ module.exports.updateQuantities = async (req, res) => {
       return res.status(404).json({ error: "Cart not found." });
     }
 
-    // Update quantities of matching products only
     for (const update of products) {
       const index = cart.products.findIndex(
         (item) => item.productId.toString() === update.productId
       );
 
-      if (index !== -1) {
-        cart.products[index].quantity = update.quantity;
-      } else {
+      if (index === -1) {
         return res.status(400).json({ error: `Product ${update.productId} not found in cart.` });
       }
+
+      if (update.quantity < 1) {
+        cart.products.splice(index, 1);
+        continue;
+      }
+
+      const stockCheck = await validateStock(update.productId, update.quantity, 0);
+      if (!stockCheck.ok) {
+        return res.status(stockCheck.status).json({ error: stockCheck.error });
+      }
+
+      cart.products[index].quantity = update.quantity;
     }
 
     await cart.save();
@@ -135,8 +159,9 @@ module.exports.updateQuantities = async (req, res) => {
       cart: {
         _id: cart._id,
         userId: cart.userId,
-        products: productsWithSubtotals
-      }
+        products: productsWithSubtotals,
+      },
+      total: calculateTotal(populatedCart),
     });
   } catch (err) {
     console.error("Update Quantities Error:", err);
