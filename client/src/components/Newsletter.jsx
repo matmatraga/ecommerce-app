@@ -19,13 +19,13 @@ export default function Newsletter() {
 
   return (
     <section className="newsletter-section">
-      <h2 className="display-6 mb-2">Stay in the loop</h2>
+      <h2 className="display-6 mb-2">Get launch updates</h2>
       <p className="mb-1 opacity-75">New drops, restocks, and exclusive deals on gaming gear.</p>
-      <p className="newsletter-section__note mb-4">Email delivery is coming soon — we&apos;ll save your spot.</p>
+      <p className="newsletter-section__note mb-4">No spam — just the gear that matters.</p>
 
       {subscribed ? (
         <p className="newsletter-section__success mb-0" role="status">
-          You&apos;re on the list! We&apos;ll reach out to <strong>{email.trim()}</strong> once updates go live.
+          You&apos;re on the list, <strong>{email.trim()}</strong>! Watch your inbox for the first drop.
         </p>
       ) : (
         <form className="newsletter-form" onSubmit={handleSubmit} noValidate>
