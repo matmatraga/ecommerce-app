@@ -9,6 +9,19 @@ const API_BASE = "https://api.paymongo.com/v2";
 // entirely in-app and never reaches PayMongo.
 const PAYMONGO_METHODS = ["gcash", "grabpay", "qrph"];
 
+// App order.paymentMethod values → PayMongo checkout_session payment_method_types.
+const CHECKOUT_PAYMENT_TYPES = {
+  gcash: "gcash",
+  grabpay: "grab_pay",
+  qrph: "qrph",
+};
+
+const toCheckoutPaymentType = (paymentMethod) => {
+  const type = CHECKOUT_PAYMENT_TYPES[paymentMethod];
+  if (!type) throw new Error(`Unsupported PayMongo payment method: ${paymentMethod}`);
+  return type;
+};
+
 const isPaymongoConfigured = Boolean(SECRET_KEY);
 
 const authHeader = () =>
@@ -41,7 +54,7 @@ async function createCheckoutSession({
               quantity: 1,
             },
           ],
-          payment_method_types: [paymentMethod],
+          payment_method_types: [toCheckoutPaymentType(paymentMethod)],
           reference_number: referenceNumber,
           metadata,
           success_url: successUrl,
@@ -91,6 +104,7 @@ function verifyWebhookSignature(rawBody, signatureHeader) {
 module.exports = {
   isPaymongoConfigured,
   PAYMONGO_METHODS,
+  toCheckoutPaymentType,
   createCheckoutSession,
   verifyWebhookSignature,
 };
