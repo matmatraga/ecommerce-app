@@ -13,6 +13,7 @@ const PAYMENT_METHODS = [
   { value: 'cod', label: 'Cash on Delivery' },
   { value: 'gcash', label: 'GCash' },
   { value: 'grabpay', label: 'GrabPay' },
+  { value: 'qrph', label: 'QRPh' },
 ];
 
 const statusVariant = {
@@ -135,7 +136,7 @@ export default function ListOrders() {
                   </div>
                   <div className="col-sm-4">
                     <span className="text-muted">Total</span>
-                    <p className="mb-0 fw-semibold">₱{order.totalAmount}</p>
+                    <p className="mb-0 fw-semibold">₱{Number(order.totalAmount).toFixed(2)}</p>
                   </div>
                   <div className="col-sm-4">
                     <span className="text-muted">Date</span>

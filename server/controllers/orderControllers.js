@@ -125,7 +125,7 @@ const ORDER_STATUSES = [
   "cancelled",
   "refunded",
 ];
-const PAYMENT_METHODS = ["cod", "gcash", "grabpay"];
+const PAYMENT_METHODS = ["cod", "gcash", "grabpay", "qrph"];
 
 module.exports.getAllOrders = async (req, res) => {
   try {
